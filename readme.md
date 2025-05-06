@@ -13,9 +13,9 @@
 
 ## 0. Ficha del proyecto
 
-### **0.1. Tu nombre completo:**
+### **0.1. Tu nombre completo:** Leonardo Benítez Núñez
 
-### **0.2. Nombre del proyecto:**
+### **0.2. Nombre del proyecto:** TaskDistributor
 
 ### **0.3. Descripción breve del proyecto:**
 
