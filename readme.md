@@ -38,9 +38,60 @@
 
 > Propósito del producto. Qué valor aporta, qué soluciona, y para quién.
 
+Task Distributor es una herramienta destinada a mejorar la planificación de proyectos de tecnología, haciéndola más ágil y efectiva. Su propósito principal es cubrir la necesidad que tiene la compañía de disponer de un sistema de planificación que supere las limitaciones del sistema actual basado en Redmine.
+
+**Valor que aporta:**
+- Centraliza la gestión de planificación de proyectos en una única herramienta
+- Proporciona visibilidad en tiempo real del estado de los proyectos
+- Facilita la comunicación entre los equipos de negocio y tecnología
+- Optimiza la asignación de recursos mediante un sistema de recomendación
+
+**Problemas que soluciona:**
+- Falta de visibilidad sobre el estado de las tareas
+- Dificultades en la gestión mediante Redmine por parte de negocio
+- Deficiente actualización de tareas por los equipos de desarrollo
+- Planificación de tareas sin visibilidad completa de las cargas de trabajo
+- Cambios constantes en prioridades y necesidades
+
+**Usuarios objetivo:**
+- Equipos de negocio (rol "negocio")
+- Equipos de tecnología (rol "tecnología")
+
 ### **1.2. Características y funcionalidades principales:**
 
 > Enumera y describe las características y funcionalidades específicas que tiene el producto para satisfacer las necesidades identificadas.
+
+**Gestión de tareas:**
+- Creación de tareas con sincronización automática con Redmine
+- Edición de información de tareas
+- Asignación de tareas a equipos (exclusivo rol tecnología)
+- Planificación de fechas de inicio y fin (exclusivo rol tecnología)
+- Borrado de tareas según permisos por rol
+
+**Sistema de recomendación de asignación de tareas:**
+- Algoritmo que propone el mejor equipo para cada tarea
+- Evaluación de métricas como carga de trabajo, estimación en sprints y capacidad de equipos
+- Cálculo de posibles fechas de inicio y fin para cada asignación posible
+- Priorización basada en matriz de afinidad entre equipos y departamentos
+
+**Visualización de información:**
+- KPIs generales, para negocio y para tecnología
+- Visualización gráfica tipo Gantt de la planificación en tiempo real
+- Código de colores para identificar el estado de las tareas
+- Vista de proyectos planificados y pendientes de planificar
+
+**Sistema de alertas:**
+- Notificaciones sobre fechas de fin próximas o sobrepasadas
+- Alertas sobre tareas sin responsable o funcional asignado
+- Notificaciones de tareas sin estimación inicial
+- Alertas sobre modificaciones de fechas
+- Avisos sobre necesidad de proyectos en departamentos o equipos
+
+**Gestión de capacidades:**
+- Configuración de equipos de desarrollo internos y externos
+- Definición de capacidades y afinidades de equipos
+- Matriz de asignación entre equipos y departamentos
+- Control de carga de trabajo por equipo
 
 ### **1.3. Diseño y experiencia de usuario:**
 
