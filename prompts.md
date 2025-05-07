@@ -18,6 +18,34 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Prompt 1:**
 
+## Diseño de solución TaskDistributor
+
+### Contexto inicial
+
+Como **product manager** tu misión es diseñar y documentar un sistema de software siguiendo las fases de investigación y análisis, casos de uso, modelado de datos, y diseño de alto nivel.
+
+### Definición del sistema
+
+El sistema a desarrollar es **TaskDistributor**.
+
+El objetivo y la especificación del proyecto está en el fichero @20250506-TaskDistributor-Funcional-v1.1.md 
+
+### Entrega a realizar
+
+Tu **misión** es diseñar la primera versión del sistema, entregando los siguientes artefactos:
+- Descripción breve del software, valor añadido y ventajas competitivas. Explicación de las funciones principales. Añadir un diagrama Lean Canvas para entender el modelo de negocio.
+- Descripción de los casos de uso principales, con el diagrama asociado a cada uno (elige el diagrama que mejor se adapte a esto).
+- Modelo de datos que cubra entidades, atributos (nombre y tipo) y relaciones (elige el diagrama que mejor se adapte a esto).
+- Diseño del sistema a alto nivel, tanto explicado como diagrama adjunto (elige el diagrama que mejor se adapte).
+
+## Premisas
+
+- Lo necesito todo en un único fichero, con formato de salida markdown.
+- Los **diagramas deben ser entregados como código**, para que puedan modificarse fácilmente en el futuro.
+- La información de los proyectos con los que trabajará el sistema saldrá de Redmine, a la que accederemos a través del API definido en @redmine-api-spec.yaml 
+- El sistema guardará la información necesaria para su gestión en una base de datos interna que es la que se solicita modelar.
+- Los datos que tiene una tarea de redmine los puedes obtener de @20250506-TaskDistributor-TareaRedmine-Campos.png 
+
 **Prompt 2:**
 
 **Prompt 3:**
