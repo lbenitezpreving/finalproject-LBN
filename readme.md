@@ -19,6 +19,8 @@
 
 ### **0.3. Descripción breve del proyecto:**
 
+TaskDistributor es una aplicación web que mejora la planificación de proyectos tecnológicos, superando las limitaciones del sistema actual basado en Redmine. La herramienta centraliza la gestión de tareas, proporciona un innovador sistema de recomendación para la asignación óptima de equipos, y ofrece visualización en tiempo real mediante KPIs y diagramas Gantt. Permite diferenciar roles entre usuarios de negocio y tecnología, con permisos específicos para cada uno. El sistema se integra con Redmine y proporciona alertas automatizadas para facilitar la gestión proactiva de los proyectos, mejorando la comunicación entre departamentos y optimizando el uso de recursos de desarrollo.
+
 ### **0.4. URL del proyecto:**
 
 > Puede ser pública o privada, en cuyo caso deberás compartir los accesos de manera segura. Puedes enviarlos a [alvaro@lidr.co](mailto:alvaro@lidr.co) usando algún servicio como [onetimesecret](https://onetimesecret.com/).
