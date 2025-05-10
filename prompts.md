@@ -185,6 +185,30 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Prompt 3:**
 
+> ### Modificación de Historias de Usuario existentes, reorganización y renumeración
+>
+> La US-03 y la US-04 deben integrarse dentro de las US-01 y la US-02, es decir, no existe una historia de usuario específica para asignar un responsable o para asignar un funcional a una tarea, sino que debe ser uno de los campos a informar en la creación y la edición de la tarea.
+>
+> Para la historia US-06, además de la estimación en sprints, tendremos que tener en cuenta el factor de carga de trabajo de la tarea. Además, tendremos que crear este campo en Redmine, porque actualmente no existe.
+>
+> La US-07 y la US-09 deben fusionarse en una única tarea ya que el objetivo de asignar un equipo y planificar fecha están relacionados.
+>
+> La tarea US-19 no es necesaria.
+>
+> La tarea US-20 hay que modificarla para indicar que el sistema deberá integrarse con las aplicaciones de la compañía siguiendo el sistema de seguridad disponible.
+>
+>Ahora vamos a ordenar bien las historias de usuario.
+> 
+> Hay historias de usuario relacionadas con gestión de tareas, gestión de planificación, gestión de visualización, gestión de kpis y gestión de alertas.
+> 
+> Ordénalas según la pertenencia a cada uno de los grupos anteriores, para que todas las tareas de cada grupo aparezcan unas detrás de otras y no se mezclen con las del siguiente grupo.
+> 
+> Después renombra las tareas para que sean correlativas y no nos saletemos ningún número, es decir, US-01, US-02, US-03, ...
+> 
+> Por último, actualiza el backlog priorizado del final para que sea consecuente con los cambios aplicados anteriormente.
+>
+> Realiza todos los cambios indicados en el fichero @historiasUsuarioYBacklog.md 
+
 ---
 
 ### 6. Tickets de Trabajo
