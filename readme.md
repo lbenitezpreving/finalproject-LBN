@@ -107,16 +107,13 @@ Task Distributor es una herramienta destinada a mejorar la planificación de pro
 ## 2. Arquitectura del Sistema
 
 ### **2.1. Diagrama de arquitectura:**
-> Usa el formato que consideres más adecuado para representar los componentes principales de la aplicación y las tecnologías utilizadas. Explica si sigue algún patrón predefinido, justifica por qué se ha elegido esta arquitectura, y destaca los beneficios principales que aportan al proyecto y justifican su uso, así como sacrificios o déficits que implica.
-
+La información detallada sobre el diagrama de arquitectura, la justificación de la arquitectura elegida, los beneficios y las limitaciones se encuentra en [Diseño del Sistema a Alto Nivel - Diagrama de Arquitectura](docs/prd/prd.md#3-diseño-del-sistema-a-alto-nivel).
 
 ### **2.2. Descripción de componentes principales:**
-
-> Describe los componentes más importantes, incluyendo la tecnología utilizada
+Para una descripción completa de los componentes principales del sistema, incluyendo las tecnologías utilizadas y sus responsabilidades, consulte [Diseño del Sistema a Alto Nivel - Componentes Principales](docs/prd/prd.md#componentes-principales).
 
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
-
-> Representa la estructura del proyecto y explica brevemente el propósito de las carpetas principales, así como si obedece a algún patrón o arquitectura específica.
+La información sobre la estructura del proyecto se basa en la arquitectura descrita en [Diseño del Sistema a Alto Nivel](docs/prd/prd.md#3-diseño-del-sistema-a-alto-nivel), siguiendo un patrón de microservicios que separa claramente las responsabilidades entre los diferentes componentes.
 
 ### **2.4. Infraestructura y despliegue**
 
@@ -153,25 +150,35 @@ Task Distributor es una herramienta destinada a mejorar la planificación de pro
 
 ## 5. Historias de Usuario
 
-> Documenta 3 de las historias de usuario principales utilizadas durante el desarrollo, teniendo en cuenta las buenas prácticas de producto al respecto.
+Las historias de usuario principales utilizadas durante el desarrollo del proyecto TaskDistributor son:
 
-**Historia de Usuario 1**
+1. [US-03: Priorización de tareas en backlog](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-03-priorización-de-tareas-en-backlog) - Permite a los usuarios de negocio establecer el orden de prioridad de las tareas.
 
-**Historia de Usuario 2**
+2. [US-05: Estimación de tarea por tecnología](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-05-estimación-de-tarea-por-tecnología) - Facilita a los usuarios de tecnología estimar el tiempo necesario para cada tarea.
 
-**Historia de Usuario 3**
+3. [US-06: Asignación de equipo y planificación de tarea](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-06-asignación-de-equipo-y-planificación-de-tarea) - Implementa el sistema de recomendación para asignar equipos a tareas.
 
----
+4. [US-08: Visualización y gestión de tareas](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-08-visualización-y-gestión-de-tareas) - Proporciona un listado configurable para visualizar y gestionar todas las tareas.
+
+5. [US-10: Visualización de capacidad de equipos](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-10-visualización-de-capacidad-de-equipos) - Muestra la capacidad y carga actual de los equipos.
+
+6. [US-11: Visualización de tareas planificadas en Gantt](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-11-visualización-de-tareas-planificadas-en-gantt) - Permite visualizar las tareas planificadas en formato Gantt.
+
+Para ver todas las historias de usuario y su priorización en el backlog, consulte el [documento completo de Historias de Usuario y Backlog](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md).
 
 ## 6. Tickets de Trabajo
 
-> Documenta 3 de los tickets de trabajo principales del desarrollo, uno de backend, uno de frontend, y uno de bases de datos. Da todo el detalle requerido para desarrollar la tarea de inicio a fin teniendo en cuenta las buenas prácticas al respecto. 
+Los tickets de trabajo detallados para las principales historias de usuario se encuentran en los siguientes enlaces:
 
-**Ticket 1**
+- [Tickets para US-08: Visualización y gestión de tareas](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-08.md) - Incluye implementación de interfaz, filtros avanzados y funcionalidades de búsqueda.
+- [Tickets para US-10: Visualización de capacidad de equipos](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-10.md) - Incluye el desarrollo del cálculo y almacenamiento de capacidad.
+- [Tickets para US-11: Visualización de tareas planificadas en Gantt](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-11.md) - Detalla la implementación del diagrama Gantt y sus controles.
+- [Tickets para US-03: Priorización de tareas en backlog](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-03.md) - Incluye el desarrollo del mecanismo de drag & drop y persistencia del orden.
+- [Tickets para US-05: Estimación de tarea por tecnología](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-05.md) - Describe la persistencia de estimaciones y factor de carga.
+- [Tickets para US-06: Asignación de equipo y planificación de tarea](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-06.md) - Detalla la implementación del sistema de recomendación.
 
-**Ticket 2**
 
-**Ticket 3**
+
 
 ---
 
