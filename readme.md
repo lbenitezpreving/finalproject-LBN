@@ -133,12 +133,24 @@ La información sobre la estructura del proyecto se basa en la arquitectura desc
 
 ### **3.1. Diagrama del modelo de datos:**
 
-> Recomendamos usar mermaid para el modelo de datos, y utilizar todos los parámetros que permite la sintaxis para dar el máximo detalle, por ejemplo las claves primarias y foráneas.
-
+El diagrama entidad-relación completo del sistema TaskDistributor se encuentra en [Diagrama del Modelo de Datos](docs/modeloDatos/modeloDatos.md#1-diagrama-del-modelo-de-datos).
 
 ### **3.2. Descripción de entidades principales:**
 
-> Recuerda incluir el máximo detalle de cada entidad, como el nombre y tipo de cada atributo, descripción breve si procede, claves primarias y foráneas, relaciones y tipo de relación, restricciones (unique, not null…), etc.
+La descripción detallada de cada entidad, sus atributos, relaciones y restricciones se encuentra en [Descripción de Entidades](docs/modeloDatos/modeloDatos.md#2-descripción-de-entidades).
+
+Las entidades principales del sistema son:
+
+- **TAREA_EXTENDED**: Almacena la información adicional que complementa las tareas de Redmine, como orden de prioridad, factor de carga y estimaciones.
+- **EQUIPO**: Gestiona la información de los equipos de desarrollo disponibles.
+- **DEPARTAMENTO**: Almacena los departamentos de negocio.
+- **MATRIZ_AFINIDAD**: Establece la relación de afinidad entre equipos y departamentos para el sistema de recomendación.
+- **ASIGNACION**: Registra la asignación histórica de tareas a equipos.
+- **HISTORIAL_ESTIMACION**: Almacena el historial de cambios en estimaciones para auditoría.
+
+El modelo ha sido diseñado específicamente para complementar la información existente en Redmine sin duplicarla, centrándose en almacenar solo los datos adicionales que necesita TaskDistributor para su funcionamiento.
+
+Para implementación y consideraciones adicionales, consulte [Notas de Implementación](docs/modeloDatos/modeloDatos.md#3-notas-de-implementación).
 
 ---
 

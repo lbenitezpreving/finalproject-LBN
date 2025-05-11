@@ -108,7 +108,18 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Prompt 1:**
 
+> ### Diseño del modelo de datos para TaskDistributor
+>
+> Ahora, como experto en modelado de bases de datos, vamos a diseñar el modelo de datos de TaskDistributor.
+> Hay que tener en cuenta que no queremos duplicar la información que ya existe en la base de datos de redmine, solo queremos referencias a las tareas y completar estas con la información que no guarda redmine, como la priorización de las tareas, el factor de carga y la estimación de sprints.
+> Además de esto, todo lo que consideres necesario.
+> Define en base al contexto que ya tienes del proyecto, a la documentación @20250506-TaskDistributor-Funcional-v1.1.md  al prd @prd.md , a las historias de usuario @historiasUsuarioYBacklog.md  y a los tickets de trabajo disponibles en @ticketsTrabajo 
+
 **Prompt 2:**
+
+> ### Simplificación del modelo de datos para el MVP
+>
+> @modeloDatos.md Para simplificar, nos vamos a centrar únicamente en las tablas necesarias para el MVP. Para ello, elimina las tablas relacionadas con las alertas y la tabla de filtros personalizados.
 
 **Prompt 3:**
 
