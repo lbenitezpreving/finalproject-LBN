@@ -597,39 +597,39 @@ Para priorizar el backlog, utilizaré la metodología MoSCoW combinada con un an
 
 | ID | Historia de Usuario | Prioridad | Dependencias | Esfuerzo | Valor de Negocio |
 |----|---------------------|-----------|--------------|----------|------------------|
-| US-15 | Autenticación de usuarios | M | Ninguna | 5 | Alto |
-| US-01 | Creación de tarea por usuario de negocio | M | US-15 | 8 | Alto |
-| US-02 | Edición de tarea por usuario de negocio | M | US-01 | 6 | Alto |
-| US-03 | Priorización de tareas en backlog | M | US-01 | 5 | Alto |
-| US-08 | Visualización y gestión de tareas | M | US-01, US-03 | 5 | Alto |
-| US-05 | Estimación de tarea por tecnología | M | US-01 | 4 | Alto |
-| US-09 | Configuración de equipos de desarrollo | M | US-15 | 5 | Alto |
-| US-07 | Definición de matriz de afinidad | M | US-09 | 5 | Alto |
-| US-06 | Asignación de equipo y planificación de tarea | M | US-05, US-09, US-07 | 10 | Alto |
-| US-10 | Visualización de capacidad de equipos | M | US-09 | 5 | Alto |
-| US-11 | Visualización de tareas planificadas en Gantt | S | US-06 | 8 | Alto |
-| US-12 | Visualización de KPIs | S | US-08, US-11 | 8 | Alto |
-| US-13 | Configuración de sistema de alertas | S | US-15 | 5 | Medio |
-| US-14 | Recepción de alertas por correo | S | US-13 | 5 | Alto |
-| US-04 | Borrado de tareas | C | US-01, US-15 | 2 | Medio |
+| US-08 | Visualización y gestión de tareas | M | - | 5 | Alto |
+| US-10 | Visualización de capacidad de equipos | M | - | 5 | Alto |
+| US-11 | Visualización de tareas planificadas en Gantt | M | US-06 | 8 | Alto |
+| US-03 | Priorización de tareas en backlog | M | - | 5 | Alto |
+| US-05 | Estimación de tarea por tecnología | M | - | 4 | Alto |
+| US-06 | Asignación de equipo y planificación de tarea | M | US-05, US-07 | 10 | Alto |
+| US-07 | Definición de matriz de afinidad | S | - | 5 | Alto |
+| US-13 | Configuración de sistema de alertas | C | US-15 | 5 | Medio |
+| US-14 | Recepción de alertas por correo | C | US-13 | 5 | Alto |
+| US-15 | Autenticación de usuarios | C | - | 5 | Alto |
+| US-01 | Creación de tarea por usuario de negocio | W | US-15 | 8 | Alto |
+| US-02 | Edición de tarea por usuario de negocio | W | US-01 | 6 | Alto |
+| US-04 | Borrado de tareas | W | US-01, US-15 | 2 | Medio |
+| US-09 | Configuración de equipos de desarrollo | W | US-15 | 5 | Alto |
+| US-12 | Visualización de KPIs | W | US-08, US-11 | 8 | Alto |
 
 ### Plan de Entregas Sugerido
 
 **MVP (Sprint 1-3):**
-- Autenticación y seguridad
-- Gestión básica de tareas (crear, editar)
-- Configuración básica de equipos y matriz de afinidad
+- Foco en visualización y gestión
+- Funcionalidades core de planificación
+- Historias US-08, US-10, US-11, US-03, US-05
 
-**Fase 2 (Sprint 4-6):**
-- Sistema de recomendación y planificación
-- Estimación de tareas con factor de carga
-- Visualización de capacidad de equipos
-- Priorización de tareas
+**Fase 2 (Sprint 4-5):**
+- Completar historias Must Have restantes
+- Implementar historias Should Have
+- Historias US-06, US-07
 
-**Fase 3 (Sprint 7-9):**
-- Visualización Gantt
-- KPIs
-- Sistema de alertas
-- Funcionalidades adicionales
+**Fase 3 (Sprint 6-8):**
+- Implementar funcionalidades Could Have
+- Historias US-15, US-13, US-14
 
-Este backlog priorizado asegura que las funcionalidades core estén disponibles en el MVP, permitiendo una entrega progresiva de valor al negocio mientras se mantiene la coherencia del sistema.
+**Más adelante (según necesidades):**
+- Reevaluar historias categorizadas como Won't Have
+
+Este backlog priorizado pone el foco en las funcionalidades de visualización, gestión y planificación que aportan mayor valor al negocio en el corto plazo, dejando para más adelante aquellas funcionalidades que, aunque útiles, no son críticas para el funcionamiento inicial del sistema.
