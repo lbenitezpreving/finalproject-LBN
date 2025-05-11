@@ -13,7 +13,7 @@
 
 ## 0. Ficha del proyecto
 
-### **0.1. Tu nombre completo:** Leonardo Benítez Núñez
+### **0.1. Nombre completo:** Leonardo Benítez Núñez
 
 ### **0.2. Nombre del proyecto:** TaskDistributor
 
@@ -34,11 +34,7 @@ TaskDistributor es una aplicación web que mejora la planificación de proyectos
 
 ## 1. Descripción general del producto
 
-> Describe en detalle los siguientes aspectos del producto:
-
 ### **1.1. Objetivo:**
-
-> Propósito del producto. Qué valor aporta, qué soluciona, y para quién.
 
 Task Distributor es una herramienta destinada a mejorar la planificación de proyectos de tecnología, haciéndola más ágil y efectiva. Su propósito principal es cubrir la necesidad que tiene la compañía de disponer de un sistema de planificación que supere las limitaciones del sistema actual basado en Redmine.
 
@@ -60,8 +56,6 @@ Task Distributor es una herramienta destinada a mejorar la planificación de pro
 - Equipos de tecnología (rol "tecnología")
 
 ### **1.2. Características y funcionalidades principales:**
-
-> Enumera y describe las características y funcionalidades específicas que tiene el producto para satisfacer las necesidades identificadas.
 
 **Gestión de tareas:**
 - Creación de tareas con sincronización automática con Redmine
