@@ -246,7 +246,19 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Prompt 2:**
 
+> ### Creación de tickets para historias de usuario específicas
+>
+> @historiasUsuarioYBacklog.md Ahora vamos a crear los tickets de las historias de usuario US-08, US-10 y US-11.
+> 
+> Para ello utiliza la plantilla definida en @tickets-trabajo-plantilla.md y genera un fichero para cada historia de usuario similar a los existentes en la carpeta @ticketsTrabajo
+
 **Prompt 3:**
+
+> ### Refinamiento y eliminación de tickets duplicados
+>
+> @ticketsTrabajo-US-08.md El ticket US-08-03 es similar al ticket Ticket US-03-01 disponible en @ticketsTrabajo-US-03.md.
+> 
+> Nos vamos a quedar con el de la historia US-03, ya que es más específico y está relacionado con la planificación.
 
 ---
 

@@ -1,5 +1,34 @@
 # Historias de Usuario y Backlog del Producto - TaskDistributor
 
+## Índice de Historias de Usuario
+
+### Gestión de Tareas
+- [US-01: Creación de tarea por usuario de negocio](#us-01-creación-de-tarea-por-usuario-de-negocio)
+- [US-02: Edición de tarea por usuario de negocio](#us-02-edición-de-tarea-por-usuario-de-negocio)
+- [US-03: Priorización de tareas en backlog](#us-03-priorización-de-tareas-en-backlog)
+- [US-04: Borrado de tareas](#us-04-borrado-de-tareas)
+
+### Gestión de Planificación
+- [US-05: Estimación de tarea por tecnología](#us-05-estimación-de-tarea-por-tecnología)
+- [US-06: Asignación de equipo y planificación de tarea](#us-06-asignación-de-equipo-y-planificación-de-tarea)
+- [US-07: Definición de matriz de afinidad entre equipos y departamentos](#us-07-definición-de-matriz-de-afinidad-entre-equipos-y-departamentos)
+
+### Gestión de Visualización
+- [US-08: Visualización y gestión de tareas](#us-08-visualización-y-gestión-de-tareas)
+- [US-09: Configuración de equipos de desarrollo](#us-09-configuración-de-equipos-de-desarrollo)
+- [US-10: Visualización de capacidad de equipos](#us-10-visualización-de-capacidad-de-equipos)
+- [US-11: Visualización de tareas planificadas en Gantt](#us-11-visualización-de-tareas-planificadas-en-gantt)
+
+### Gestión de KPIs
+- [US-12: Visualización de KPIs](#us-12-visualización-de-kpis)
+
+### Gestión de Alertas
+- [US-13: Configuración de sistema de alertas](#us-13-configuración-de-sistema-de-alertas)
+- [US-14: Recepción de alertas por correo](#us-14-recepción-de-alertas-por-correo)
+
+### Autenticación
+- [US-15: Autenticación de usuarios](#us-15-autenticación-de-usuarios)
+
 ## Historias de Usuario
 
 <!-- GRUPO: GESTIÓN DE TAREAS -->
@@ -32,7 +61,7 @@
 #### Historias de Usuario Relacionadas
 - US-02: Edición de tarea por usuario de negocio
 - US-03: Priorización de tareas en backlog
-- US-08: Visualización de tareas pendientes de planificar
+- US-08: Visualización y gestión de tareas
 
 #### Tareas
 - Diseñar interfaz de formulario de creación
@@ -111,7 +140,7 @@
 
 #### Historias de Usuario Relacionadas
 - US-01: Creación de tarea por usuario de negocio
-- US-08: Visualización de tareas pendientes de planificar
+- US-08: Visualización y gestión de tareas
 
 #### Tareas
 - Implementar interfaz de drag & drop para reordenación
@@ -278,36 +307,43 @@
 
 <!-- GRUPO: GESTIÓN DE VISUALIZACIÓN -->
 
-### US-08: Visualización de tareas pendientes de planificar
+### US-08: Visualización y gestión de tareas
 
 **Como** usuario de tecnología o negocio,  
-**quiero** ver un listado de todas las tareas pendientes de planificar,  
-**para que** pueda tener una visión clara del backlog.
+**quiero** visualizar y gestionar todas las tareas del sistema mediante un listado configurable,  
+**para que** pueda tener una visión completa y personalizada según mis necesidades.
 
 #### Criterios de Aceptación
-- El listado debe mostrar las tareas ordenadas por prioridad
-- Se debe poder filtrar por departamento, estado, responsable, etc.
-- Cada tarea debe mostrar información relevante (asunto, responsable, prioridad, etc.)
+- El listado debe permitir visualizar todas las tareas del sistema
+- Se debe poder filtrar por múltiples criterios: departamento, estado, responsable, equipo asignado, etapa (pendiente de planificar, planificada, en curso, etc.)
+- Cada tarea debe mostrar información relevante (asunto, responsable, equipo, prioridad, fechas, etc.)
 - Si el usuario es de negocio, solo debe ver las tareas de su departamento
+- El sistema debe permitir guardar configuraciones personalizadas de filtros
+- Debe proporcionar opciones para ordenar por diversos criterios (prioridad, fecha, etc.)
+- Debe incluir una vista específica para tareas pendientes de planificar
 
 #### Notas Adicionales
-- Se debe poder exportar el listado a Excel
+- Se debe poder exportar el listado a Excel según los filtros aplicados
+- La interfaz debe optimizarse para cargar rápidamente grandes volúmenes de tareas
+- Se debe permitir la búsqueda por texto para localizar tareas rápidamente
 
 #### Historias de Usuario Relacionadas
 - US-01: Creación de tarea por usuario de negocio
 - US-03: Priorización de tareas en backlog
 
 #### Tareas
-- Implementar interfaz de listado con filtros
-- Desarrollar mecanismo de carga eficiente de datos
+- Implementar interfaz de listado con filtros avanzados
+- Desarrollar mecanismo de carga eficiente y paginación de datos
 - Implementar lógica de filtrado por rol de usuario
+- Implementar guardado de configuraciones personalizadas
+- Desarrollar funcionalidad de búsqueda por texto
 - Desarrollar funcionalidad de exportación
 - Crear pruebas unitarias y de integración
 
 #### Estimación
 | Item | Impacto en usuario/negocio | Urgencia | Complejidad/Esfuerzo | Riesgos/Dependencias |
 |------|----------------------------|----------|----------------------|----------------------|
-| US-08: Visualización de backlog | Alto | Alta | Media (5) | Bajo |
+| US-08: Visualización y gestión de tareas | Alto | Alta | Media (5) | Bajo |
 
 ---
 
@@ -431,7 +467,7 @@
 - Debe incluir opción para exportar a PDF
 
 #### Historias de Usuario Relacionadas
-- US-08: Visualización de tareas pendientes de planificar
+- US-08: Visualización y gestión de tareas
 - US-11: Visualización de tareas planificadas en Gantt
 
 #### Tareas
@@ -565,7 +601,7 @@ Para priorizar el backlog, utilizaré la metodología MoSCoW combinada con un an
 | US-01 | Creación de tarea por usuario de negocio | M | US-15 | 8 | Alto |
 | US-02 | Edición de tarea por usuario de negocio | M | US-01 | 6 | Alto |
 | US-03 | Priorización de tareas en backlog | M | US-01 | 5 | Alto |
-| US-08 | Visualización de tareas pendientes de planificar | M | US-01, US-03 | 5 | Alto |
+| US-08 | Visualización y gestión de tareas | M | US-01, US-03 | 5 | Alto |
 | US-05 | Estimación de tarea por tecnología | M | US-01 | 4 | Alto |
 | US-09 | Configuración de equipos de desarrollo | M | US-15 | 5 | Alto |
 | US-07 | Definición de matriz de afinidad | M | US-09 | 5 | Alto |
