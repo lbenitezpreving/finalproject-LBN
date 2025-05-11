@@ -29,7 +29,7 @@ Considerar la posibilidad de implementar un sistema basado en reglas con capacid
 - Datos históricos de asignaciones previas para entrenamiento
 
 ### Historial de Cambios
-- 2023-06-20 - Creación del ticket
+- 2025-05-10 - Creación del ticket
 
 ---
 
@@ -62,7 +62,7 @@ Utilizar elementos visuales como barras de progreso, códigos de colores y toolt
 - Documento de especificación de US-06
 
 ### Historial de Cambios
-- 2023-06-20 - Creación del ticket
+- 2025-05-10 - Creación del ticket
 
 ---
 
@@ -95,7 +95,7 @@ Integrar este componente con la visualización de capacidad de equipos para most
 - Especificación de integración con el calendario de equipos
 
 ### Historial de Cambios
-- 2023-06-20 - Creación del ticket
+- 2025-05-10 - Creación del ticket
 
 ---
 
@@ -128,7 +128,7 @@ Implementar diferentes niveles de advertencia según la gravedad del conflicto. 
 - Especificación de niveles de advertencia
 
 ### Historial de Cambios
-- 2023-06-20 - Creación del ticket
+- 2025-05-10 - Creación del ticket
 
 ---
 
@@ -153,7 +153,7 @@ Implementar la sincronización bidireccional de asignaciones de equipos y fechas
 **Etiquetas**: Backend, Integración, API, Sprint 5  
 
 ### Comentarios
-Utilizar la cola de mensajes del sistema para realizar las sincronizaciones de manera asíncrona. Implementar un sistema de detección de conflictos para resolver casos donde ambos sistemas tengan modificaciones pendientes.
+Realizar las sincronizaciones de manera síncrona para evitar complejizar el sistema.
 
 ### Enlaces
 - Documentación de la API de Redmine
@@ -161,4 +161,4 @@ Utilizar la cola de mensajes del sistema para realizar las sincronizaciones de m
 - Diagrama de secuencia para sincronización
 
 ### Historial de Cambios
-- 2023-06-20 - Creación del ticket 
+- 2025-05-10 - Creación del ticket 

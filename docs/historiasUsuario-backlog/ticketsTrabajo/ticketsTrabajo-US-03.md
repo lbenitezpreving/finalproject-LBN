@@ -27,14 +27,14 @@ Considerar usar una biblioteca como React DnD o SortableJS para implementar esta
 - [Guía de estilo de UI de TaskDistributor]
 
 ### Historial de Cambios
-- 2023-06-10 - Creación del ticket
+- 2025-05-10 - Creación del ticket
 
 ---
 
 ## Ticket US-03-02: Desarrollo de mecanismo de persistencia de orden de prioridad
 
 ### Descripción
-Implementar la lógica del lado del servidor para guardar y mantener el orden de prioridad establecido por los usuarios, asegurando que los cambios se persistan en la base de datos.
+Implementar la lógica del lado del servidor para guardar y mantener el orden de prioridad establecido por los usuarios, asegurando que los cambios se persistan en la base de datos de TaskDistributor. La información de prioridad será gestionada exclusivamente en la base de datos interna del sistema.
 
 ### Criterios de Aceptación
 - El sistema debe almacenar el orden de prioridad de las tareas
@@ -58,42 +58,11 @@ Considerar estrategias de indexación para mejorar el rendimiento de consultas d
 - Diagrama de secuencia para operaciones de reordenación
 
 ### Historial de Cambios
-- 2023-06-10 - Creación del ticket
+- 2025-05-10 - Creación del ticket
 
 ---
 
-## Ticket US-03-03: Integración con API de Redmine para actualización
-
-### Descripción
-Implementar la sincronización del orden de prioridad de tareas entre TaskDistributor y Redmine, asegurando que cualquier cambio realizado en la priorización se refleje correctamente en Redmine.
-
-### Criterios de Aceptación
-- Los cambios en la priorización deben sincronizarse automáticamente con Redmine
-- Se debe implementar un mecanismo de reintentos en caso de fallos de comunicación
-- El sistema debe manejar adecuadamente los errores de la API de Redmine
-- Se debe mantener un registro de las sincronizaciones para auditoría y resolución de problemas
-- La sincronización no debe bloquear la interfaz de usuario durante su ejecución
-
-### Detalles
-**Prioridad**: Alta  
-**Estimación**: 5 puntos de historia  
-**Asignado a**: Equipo Backend  
-**Etiquetas**: Backend, Integración, API, Sprint 3  
-
-### Comentarios
-Utilizar el campo de prioridad de Redmine para reflejar los cambios. Se debe establecer un mapeo entre el orden interno de TaskDistributor y los valores de prioridad en Redmine.
-
-### Enlaces
-- Documentación de la API de Redmine
-- Especificación de integración con sistemas externos
-- Diagrama de secuencia para sincronización
-
-### Historial de Cambios
-- 2023-06-10 - Creación del ticket
-
----
-
-## Ticket US-03-04: Desarrollo de pruebas unitarias y de integración
+## Ticket US-03-03: Desarrollo de pruebas unitarias y de integración
 
 ### Descripción
 Diseñar e implementar un conjunto completo de pruebas unitarias y de integración para la funcionalidad de priorización de tareas, garantizando la calidad y robustez del sistema.
@@ -103,7 +72,6 @@ Diseñar e implementar un conjunto completo de pruebas unitarias y de integraci�
 - Se deben implementar pruebas de integración que validen el flujo completo de priorización
 - Las pruebas deben validar el comportamiento con diferentes roles de usuario
 - Se deben incluir pruebas de rendimiento para el caso de gran volumen de tareas
-- Las pruebas deben validar la correcta sincronización con Redmine
 
 ### Detalles
 **Prioridad**: Media  
@@ -120,11 +88,11 @@ Utilizar Jest para pruebas frontend, JUnit para backend y Cypress para pruebas E
 - Configuración del entorno de pruebas
 
 ### Historial de Cambios
-- 2023-06-10 - Creación del ticket
+- 2025-05-10 - Creación del ticket
 
 ---
 
-## Ticket US-03-05: Implementación de indicador visual de prioridad
+## Ticket US-03-04: Implementación de indicador visual de prioridad
 
 ### Descripción
 Desarrollar un componente visual que muestre claramente el nivel de prioridad de cada tarea en el listado del backlog, facilitando la comprensión del orden establecido.
@@ -151,4 +119,4 @@ Considerar el uso de colores, iconos y/o etiquetas para representar visualmente 
 - Pautas de accesibilidad WCAG 2.1
 
 ### Historial de Cambios
-- 2023-06-10 - Creación del ticket 
+- 2025-05-10 - Creación del ticket 
