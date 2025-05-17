@@ -598,11 +598,11 @@ Para priorizar el backlog, utilizaré la metodología MoSCoW combinada con un an
 | ID | Historia de Usuario | Prioridad | Dependencias | Esfuerzo | Valor de Negocio |
 |----|---------------------|-----------|--------------|----------|------------------|
 | US-08 | Visualización y gestión de tareas | M | - | 5 | Alto |
-| US-10 | Visualización de capacidad de equipos | M | - | 5 | Alto |
-| US-11 | Visualización de tareas planificadas en Gantt | M | US-06 | 8 | Alto |
-| US-03 | Priorización de tareas en backlog | M | - | 5 | Alto |
 | US-05 | Estimación de tarea por tecnología | M | - | 4 | Alto |
 | US-06 | Asignación de equipo y planificación de tarea | M | US-05, US-07 | 10 | Alto |
+| US-03 | Priorización de tareas en backlog | M | - | 5 | Alto |
+| US-10 | Visualización de capacidad de equipos | M | - | 5 | Alto |
+| US-11 | Visualización de tareas planificadas en Gantt | M | US-06 | 8 | Alto |
 | US-07 | Definición de matriz de afinidad | S | - | 5 | Alto |
 | US-13 | Configuración de sistema de alertas | C | US-15 | 5 | Medio |
 | US-14 | Recepción de alertas por correo | C | US-13 | 5 | Alto |
@@ -618,12 +618,13 @@ Para priorizar el backlog, utilizaré la metodología MoSCoW combinada con un an
 **MVP (Sprint 1-3):**
 - Foco en visualización y gestión
 - Funcionalidades core de planificación
-- Historias US-08, US-10, US-11, US-03, US-05
+- Historias más prioritarias US-08, US-05, US-06
+- Historias secundarias, en función del tiempo disponible US-03, US-10, US-11
 
 **Fase 2 (Sprint 4-5):**
 - Completar historias Must Have restantes
 - Implementar historias Should Have
-- Historias US-06, US-07
+- Historias US-07
 
 **Fase 3 (Sprint 6-8):**
 - Implementar funcionalidades Could Have

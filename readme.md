@@ -156,15 +156,17 @@ Para implementación y consideraciones adicionales, consulte [Notas de Implement
 
 ## 5. Historias de Usuario
 
-Las historias de usuario principales utilizadas durante el desarrollo del proyecto TaskDistributor son:
+Las historias de usuario principales a desarrollar para el MVP del proyecto TaskDistributor son:
 
-1. [US-03: Priorización de tareas en backlog](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-03-priorización-de-tareas-en-backlog) - Permite a los usuarios de negocio establecer el orden de prioridad de las tareas.
+1. [US-08: Visualización y gestión de tareas](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-08-visualización-y-gestión-de-tareas) - Proporciona un listado configurable para visualizar y gestionar todas las tareas.
 
 2. [US-05: Estimación de tarea por tecnología](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-05-estimación-de-tarea-por-tecnología) - Facilita a los usuarios de tecnología estimar el tiempo necesario para cada tarea.
 
 3. [US-06: Asignación de equipo y planificación de tarea](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-06-asignación-de-equipo-y-planificación-de-tarea) - Implementa el sistema de recomendación para asignar equipos a tareas.
 
-4. [US-08: Visualización y gestión de tareas](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-08-visualización-y-gestión-de-tareas) - Proporciona un listado configurable para visualizar y gestionar todas las tareas.
+Adicionalmente, en función del tiempo disponible, sería interesante abordar las historias:
+
+4. [US-03: Priorización de tareas en backlog](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-03-priorización-de-tareas-en-backlog) - Permite a los usuarios de negocio establecer el orden de prioridad de las tareas.
 
 5. [US-10: Visualización de capacidad de equipos](docs/historiasUsuario-backlog/historiasUsuarioYBacklog.md#us-10-visualización-de-capacidad-de-equipos) - Muestra la capacidad y carga actual de los equipos.
 
@@ -177,12 +179,14 @@ Para ver todas las historias de usuario y su priorización en el backlog, consul
 Los tickets de trabajo detallados para las principales historias de usuario se encuentran en los siguientes enlaces:
 
 - [Tickets para US-08: Visualización y gestión de tareas](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-08.md) - Incluye implementación de interfaz, filtros avanzados y funcionalidades de búsqueda.
-- [Tickets para US-10: Visualización de capacidad de equipos](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-10.md) - Incluye el desarrollo del cálculo y almacenamiento de capacidad.
-- [Tickets para US-11: Visualización de tareas planificadas en Gantt](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-11.md) - Detalla la implementación del diagrama Gantt y sus controles.
-- [Tickets para US-03: Priorización de tareas en backlog](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-03.md) - Incluye el desarrollo del mecanismo de drag & drop y persistencia del orden.
 - [Tickets para US-05: Estimación de tarea por tecnología](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-05.md) - Describe la persistencia de estimaciones y factor de carga.
 - [Tickets para US-06: Asignación de equipo y planificación de tarea](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-06.md) - Detalla la implementación del sistema de recomendación.
 
+Adicionalmente, en función del tiempo disponible, sería interesante abordar los tickets:
+
+- [Tickets para US-03: Priorización de tareas en backlog](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-03.md) - Incluye el desarrollo del mecanismo de drag & drop y persistencia del orden.
+- [Tickets para US-10: Visualización de capacidad de equipos](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-10.md) - Incluye el desarrollo del cálculo y almacenamiento de capacidad.
+- [Tickets para US-11: Visualización de tareas planificadas en Gantt](docs/historiasUsuario-backlog/ticketsTrabajo/ticketsTrabajo-US-11.md) - Detalla la implementación del diagrama Gantt y sus controles.
 
 
 
