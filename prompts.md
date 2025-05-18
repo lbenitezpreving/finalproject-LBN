@@ -104,7 +104,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 ---
 
-### 3. Modelo de Datos
+## 3. Modelo de Datos
 
 **Prompt 1:**
 
@@ -122,6 +122,28 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 > @modeloDatos.md Para simplificar, nos vamos a centrar únicamente en las tablas necesarias para el MVP. Para ello, elimina las tablas relacionadas con las alertas y la tabla de filtros personalizados.
 
 **Prompt 3:**
+
+> ### Implementación de la base de datos con PostgreSQL y Supabase
+>
+> Vamos a empezar con la implementación del proyecto.
+> Ten en cuenta todo el contexto del proyecto.
+> Vamos a centrarnos en la base de datos primero en base al modelo ya definido en la documentación@modeloDatos.md.
+> Eres un experto en base de datos con experiencia en postgresql y en la plataforma supabase, que es la que vamos a utilizar.
+> Vamos a utilizar el ORM Prisma.
+> Sugiere la creación de índices para obtener el mejor rendimiento.
+> Indícame los pasos a seguir para levantar la base de datos utilizando Prisma.
+> La base de datos debe estar normalizada y cumplir todos los estándares de la industría.
+> Antes de hacer nada, hazme todas las preguntas y sugerencias que consideres necesarias.
+>
+> Te respondo a las preguntas:
+> 1.- Si, utilizaré el sistema de autenticación de supabase.
+> 2.- No. No vamos a utilizar RLS.
+> 3.- El volumen será pequeño, no lo tengas en cuenta de momento.
+> 4.- La sincronización con Redmine se realizará de forma manual.
+> 5.- Empezamos desde cero. No hay datos iniciales.
+> En relación al particionamiento, me gustaría aprender a utilizarlo, con lo que hazlo para la tabla HistorialEstimation, tal como estás sugiriendo.
+>
+> Crea ya los primeros ficheros necesarios.
 
 ---
 
