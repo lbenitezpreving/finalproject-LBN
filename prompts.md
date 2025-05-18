@@ -165,6 +165,13 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Prompt 2:**
 
+> ### Creación de servicio para interactuar con Redmine
+>
+> Ahora vamos a crear un servicio genérico en el backend para interactuar con redmine.
+> Sigue la especificación del api de redmine @redmine-api-spec.yaml 
+> Crea todos los métodos que creas necesarios para interactuar con las tareas de acuerdo a la especificación del proyecto@prd.md .
+> Crea los endpoints necesarios para probar el servicio completo.
+
 **Prompt 3:**
 
 ---
