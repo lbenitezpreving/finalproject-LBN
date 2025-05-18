@@ -151,6 +151,18 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 
 **Prompt 1:**
 
+> ### Configuración inicial del backend con Express y Prisma
+>
+> Eres un experto en desarrollo backend, especializado en el framework express.
+> Vamos a crear la estructura inicial del proyecto backend y a meterla en la carpeta backend disponible.
+> El backend se conectará a una base de datos postgresql utilizando el orm prisma.
+> El backend será documentado utilizando swagger.
+> El backend tendrá seguridad por jwt.
+> El backend utilizará buenas prácticas de desarrollo y de seguridad.
+> Además añade cualquier característica que consideres necesaria.
+> Utiliza todo el contexto del proyecto para tener conocimiento de lo que vamos a crear.
+> No crees ningún endpoint todavía, solo la estructura inicial. Vamos a ir paso a paso.
+
 **Prompt 2:**
 
 **Prompt 3:**
