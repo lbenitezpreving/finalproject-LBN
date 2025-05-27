@@ -10,7 +10,7 @@ import {
   faHourglass,
   faClock
 } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStage, TaskStatus } from '../../types';
+import { Task, TaskStage } from '../../types';
 import { getDepartmentName } from '../../services/mockData/departments';
 import { getTeamName } from '../../services/mockData/teams';
 import { getUserName } from '../../services/mockData/users';
