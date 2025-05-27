@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import TaskManagement from './pages/TaskManagement';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -57,6 +58,17 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <MainLayout>
               <Dashboard />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/tasks" 
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <TaskManagement />
             </MainLayout>
           </ProtectedRoute>
         } 

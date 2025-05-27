@@ -92,4 +92,75 @@ export interface Alert {
   message: string;
   createdAt: Date;
   isRead: boolean;
+}
+
+// Tipos para filtros de tareas
+export interface TaskFilters {
+  department?: number;
+  status?: TaskStatus;
+  assignedTo?: number;
+  team?: number;
+  priority?: number;
+  startDate?: Date;
+  endDate?: Date;
+  hasResponsible?: boolean;
+  hasFunctional?: boolean;
+  hasEstimation?: boolean;
+  stage?: TaskStage;
+}
+
+export enum TaskStage {
+  BACKLOG = 'backlog',
+  PENDING_PLANNING = 'pending_planning',
+  PLANNED = 'planned',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed'
+}
+
+// Tipos para paginación
+export interface PaginationInfo {
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationInfo;
+}
+
+// Tipos para búsqueda
+export interface SearchParams {
+  query: string;
+  fields: string[]; // campos en los que buscar
+}
+
+// Tipos para exportación
+export enum ExportFormat {
+  EXCEL = 'excel',
+  CSV = 'csv'
+}
+
+export interface ExportRequest {
+  format: ExportFormat;
+  filters?: TaskFilters;
+  columns: string[];
+  filename?: string;
+}
+
+// Tipos para configuración de filtros guardados
+export interface SavedFilterConfig {
+  id: string;
+  name: string;
+  filters: TaskFilters;
+  userId: number;
+  isDefault?: boolean;
+  createdAt: Date;
+}
+
+// Tipos para ordenamiento
+export interface SortConfig {
+  field: string;
+  direction: 'asc' | 'desc';
 } 
