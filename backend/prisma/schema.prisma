@@ -5,6 +5,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// LEO Aqui he tenido que indicar DIRECT_URL en vez de DATABASE_URL. Con DATABASE_URL no la cogía bien, siempre cogía la del pool y no debería.
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")

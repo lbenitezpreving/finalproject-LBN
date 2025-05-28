@@ -1,48 +1,58 @@
 /**
  * Script para ejecutar el particionamiento de la tabla historial_estimaciones
- * 
- * Este script lee el archivo SQL de configuración de particionamiento y
- * lo ejecuta en la base de datos.
+ * Este script debe ejecutarse después de que Prisma haya creado las tablas iniciales.
  */
 
+require('dotenv').config();
+const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
-const { PrismaClient } = require('@prisma/client');
-const dotenv = require('dotenv');
 
-// Cargar variables de entorno
-dotenv.config();
-
-// Crear una instancia de Prisma
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Configurando particionamiento para la tabla historial_estimaciones...');
+  console.log('Comenzando la configuración de particionamiento...');
   
   try {
-    // Leer el archivo SQL
-    const sqlFilePath = path.join(__dirname, 'partition_setup.sql');
-    const sqlScript = fs.readFileSync(sqlFilePath, 'utf8');
+    // Leer el archivo SQL con el script de particionamiento
+    const partitionScript = fs.readFileSync(
+      path.join(__dirname, 'partition_setup.sql'),
+      'utf8'
+    );
     
-    // Ejecutar el script SQL directamente en la base de datos
-    const result = await prisma.$executeRawUnsafe(sqlScript);
+    // Ejecutar el script de particionamiento directamente en la base de datos
+    await prisma.$executeRawUnsafe(partitionScript);
     
-    console.log('Particionamiento configurado correctamente');
+    console.log('Particionamiento completado exitosamente.');
+    
+    // Opcionalmente, verificar que las particiones se hayan creado
+    const partitions = await prisma.$queryRaw`
+      SELECT tablename 
+      FROM pg_tables 
+      WHERE tablename LIKE 'historial_estimaciones_y%'
+    `;
+    
+    console.log('Particiones creadas:');
+    partitions.forEach(partition => {
+      console.log(`- ${partition.tablename}`);
+    });
+    
   } catch (error) {
     console.error('Error al configurar el particionamiento:', error);
     process.exit(1);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-// Ejecutar la función principal
 main()
-  .catch(e => {
-    console.error(e);
-    process.exit(1);
+  .then(() => {
+    console.log('Proceso completado.');
+    process.exit(0);
   })
-  .finally(async () => {
-    // Cerrar la conexión a la base de datos
-    await prisma.$disconnect();
+  .catch((error) => {
+    console.error('Error en el proceso:', error);
+    process.exit(1);
   });
 
 /**

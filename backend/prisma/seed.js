@@ -54,42 +54,52 @@ async function main() {
   // Crear equipos
   const equipos = await Promise.all([
     prisma.equipo.upsert({
-      where: { nombre: 'Equipo A' },
+      where: { nombre: 'Dev 01' },
       update: {},
       create: {
-        nombre: 'Equipo A',
+        nombre: 'Dev 01',
         tipo: 'INTERNO',
-        capacidad: 1.0,
+        capacidad: 2.0,
         activo: true
       }
     }),
     prisma.equipo.upsert({
-      where: { nombre: 'Equipo B' },
+      where: { nombre: 'Dev 03' },
       update: {},
       create: {
-        nombre: 'Equipo B',
+        nombre: 'Dev 03',
         tipo: 'INTERNO',
-        capacidad: 1.5,
+        capacidad: 2.0,
         activo: true
       }
     }),
     prisma.equipo.upsert({
-      where: { nombre: 'Equipo C' },
+      where: { nombre: 'Dev 05' },
       update: {},
       create: {
-        nombre: 'Equipo C',
-        tipo: 'EXTERNO',
-        capacidad: 0.8,
+        nombre: 'Dev 05',
+        tipo: 'INTERNO',
+        capacidad: 2.0,
         activo: true
       }
     }),
     prisma.equipo.upsert({
-      where: { nombre: 'Equipo D' },
+      where: { nombre: 'Equipo Externo 1' },
       update: {},
       create: {
-        nombre: 'Equipo D',
+        nombre: 'Equipo Externo 1',
         tipo: 'EXTERNO',
-        capacidad: 1.2,
+        capacidad: 2.0,
+        activo: true
+      }
+    }),
+    prisma.equipo.upsert({
+      where: { nombre: 'Equipo Externo 2' },
+      update: {},
+      create: {
+        nombre: 'Equipo Externo 2',
+        tipo: 'EXTERNO',
+        capacidad: 2.0,
         activo: true
       }
     }),
@@ -128,37 +138,38 @@ async function main() {
   await Promise.all(afinidades);
   console.log(`${afinidades.length} afinidades creadas o actualizadas`);
 
-  // Crear usuarios con contraseñas hasheadas
-  const salt = await bcrypt.genSalt(10);
-  
+  // Hash para las contraseñas
+  const defaultPasswordHash = await bcrypt.hash('password123', 10);
+
+  // Crear usuarios
   const usuarios = await Promise.all([
     prisma.user.upsert({
-      where: { email: 'negocio@example.com' },
+      where: { email: 'negocio@taskdistributor.com' },
       update: {},
       create: {
         name: 'Usuario Negocio',
-        email: 'negocio@example.com',
-        password: await bcrypt.hash('password123', salt),
+        email: 'negocio@taskdistributor.com',
+        password: defaultPasswordHash,
         role: 'NEGOCIO'
       }
     }),
     prisma.user.upsert({
-      where: { email: 'tecnologia@example.com' },
+      where: { email: 'tecnologia@taskdistributor.com' },
       update: {},
       create: {
         name: 'Usuario Tecnología',
-        email: 'tecnologia@example.com',
-        password: await bcrypt.hash('password123', salt),
+        email: 'tecnologia@taskdistributor.com',
+        password: defaultPasswordHash,
         role: 'TECNOLOGIA'
       }
     }),
     prisma.user.upsert({
-      where: { email: 'admin@example.com' },
+      where: { email: 'admin@taskdistributor.com' },
       update: {},
       create: {
         name: 'Administrador',
-        email: 'admin@example.com',
-        password: await bcrypt.hash('password123', salt),
+        email: 'admin@taskdistributor.com',
+        password: defaultPasswordHash,
         role: 'ADMIN'
       }
     }),
@@ -177,8 +188,8 @@ async function main() {
         ordenPrioridad: 1,
         factorCarga: 1.2,
         estimacionSprints: 2,
-        fechaInicioPlanificada: new Date('2024-03-01'),
-        fechaFinPlanificada: new Date('2024-03-15')
+        fechaInicioPlanificada: new Date('2025-01-15'),
+        fechaFinPlanificada: new Date('2025-02-15')
       }
     }),
     prisma.tareaExtended.upsert({
@@ -189,8 +200,8 @@ async function main() {
         ordenPrioridad: 2,
         factorCarga: 0.8,
         estimacionSprints: 1,
-        fechaInicioPlanificada: new Date('2024-03-10'),
-        fechaFinPlanificada: new Date('2024-03-20')
+        fechaInicioPlanificada: new Date('2025-02-01'),
+        fechaFinPlanificada: new Date('2025-02-20')
       }
     }),
     prisma.tareaExtended.upsert({
@@ -201,15 +212,39 @@ async function main() {
         ordenPrioridad: 3,
         factorCarga: 1.5,
         estimacionSprints: 3,
-        fechaInicioPlanificada: new Date('2024-03-15'),
-        fechaFinPlanificada: new Date('2024-04-05')
+        fechaInicioPlanificada: new Date('2025-02-15'),
+        fechaFinPlanificada: new Date('2025-04-05')
+      }
+    }),
+    prisma.tareaExtended.upsert({
+      where: { redmineTaskId: 10004 },
+      update: {},
+      create: {
+        redmineTaskId: 10004,
+        ordenPrioridad: null,
+        factorCarga: 1.0,
+        estimacionSprints: null,
+        fechaInicioPlanificada: null,
+        fechaFinPlanificada: null
+      }
+    }),
+    prisma.tareaExtended.upsert({
+      where: { redmineTaskId: 10005 },
+      update: {},
+      create: {
+        redmineTaskId: 10005,
+        ordenPrioridad: null,
+        factorCarga: 2.0,
+        estimacionSprints: null,
+        fechaInicioPlanificada: null,
+        fechaFinPlanificada: null
       }
     }),
   ]);
 
   console.log(`${tareas.length} tareas creadas o actualizadas`);
 
-  // Asignar tareas a equipos
+  // Asignar tareas a equipos (solo las que están planificadas)
   const asignaciones = await Promise.all([
     prisma.asignacion.create({
       data: {
@@ -217,12 +252,6 @@ async function main() {
         equipoId: equipos[0].id,
         fechaAsignacion: new Date()
       }
-    }).catch(e => {
-      if (e.code === 'P2002') {
-        console.log('La asignación ya existe, ignorando duplicado');
-        return null;
-      }
-      throw e;
     }),
     prisma.asignacion.create({
       data: {
@@ -230,12 +259,6 @@ async function main() {
         equipoId: equipos[1].id,
         fechaAsignacion: new Date()
       }
-    }).catch(e => {
-      if (e.code === 'P2002') {
-        console.log('La asignación ya existe, ignorando duplicado');
-        return null;
-      }
-      throw e;
     }),
     prisma.asignacion.create({
       data: {
@@ -243,18 +266,13 @@ async function main() {
         equipoId: equipos[2].id,
         fechaAsignacion: new Date()
       }
-    }).catch(e => {
-      if (e.code === 'P2002') {
-        console.log('La asignación ya existe, ignorando duplicado');
-        return null;
-      }
-      throw e;
     }),
   ]);
 
-  console.log(`${asignaciones.filter(Boolean).length} asignaciones creadas`);
+  console.log(`${asignaciones.length} asignaciones creadas`);
 
   // Crear registros de historial de estimación
+  // Nota: Estos registros serán particionados por la fecha_cambio
   const historiales = await Promise.all([
     prisma.historialEstimacion.create({
       data: {
@@ -264,14 +282,8 @@ async function main() {
         factorCargaAnterior: null,
         factorCargaNueva: 1.2,
         usuarioId: usuarios[1].id,
-        fechaCambio: new Date('2024-02-25')
+        fechaCambio: new Date('2024-12-25')
       }
-    }).catch(e => {
-      if (e.code === 'P2002') {
-        console.log('El historial ya existe, ignorando duplicado');
-        return null;
-      }
-      throw e;
     }),
     prisma.historialEstimacion.create({
       data: {
@@ -281,44 +293,37 @@ async function main() {
         factorCargaAnterior: null,
         factorCargaNueva: 0.8,
         usuarioId: usuarios[1].id,
-        fechaCambio: new Date('2024-02-26')
+        fechaCambio: new Date('2024-12-26')
       }
-    }).catch(e => {
-      if (e.code === 'P2002') {
-        console.log('El historial ya existe, ignorando duplicado');
-        return null;
-      }
-      throw e;
     }),
     prisma.historialEstimacion.create({
       data: {
         tareaId: tareas[2].id,
-        estimacionAnterior: null,
+        estimacionAnterior: 2,
         estimacionNueva: 3,
-        factorCargaAnterior: null,
+        factorCargaAnterior: 1.0,
         factorCargaNueva: 1.5,
         usuarioId: usuarios[1].id,
-        fechaCambio: new Date('2024-02-27')
+        fechaCambio: new Date('2024-12-27')
       }
-    }).catch(e => {
-      if (e.code === 'P2002') {
-        console.log('El historial ya existe, ignorando duplicado');
-        return null;
-      }
-      throw e;
     }),
   ]);
 
-  console.log(`${historiales.filter(Boolean).length} registros de historial creados`);
-
-  console.log('Seeding completado correctamente');
+  console.log(`${historiales.length} registros de historial creados`);
+  
+  console.log('Proceso de sembrado completado con éxito.');
+  console.log('\nUsuarios creados:');
+  console.log('- Admin: admin@taskdistributor.com / password123');
+  console.log('- Negocio: negocio@taskdistributor.com / password123');
+  console.log('- Tecnología: tecnologia@taskdistributor.com / password123');
 }
 
 main()
-  .catch((e) => {
-    console.error('Error durante el sembrado:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
+  .then(async () => {
     await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error('Error durante el proceso de sembrado:', e);
+    await prisma.$disconnect();
+    process.exit(1);
   }); 

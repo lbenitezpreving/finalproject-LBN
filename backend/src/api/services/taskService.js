@@ -1,0 +1,437 @@
+const { prisma } = require('../../config/database');
+const redmineService = require('./redmineService');
+
+/**
+ * Servicio para gestión de tareas que combina datos de Redmine y TaskDistributor
+ */
+
+/**
+ * Combina datos de Redmine con información extendida de TaskDistributor
+ * @param {Array} redmineTasks - Tareas de Redmine
+ * @returns {Promise<Array>} Tareas combinadas con información extendida
+ */
+const combineTasksWithExtendedData = async (redmineTasks) => {
+  if (!redmineTasks || redmineTasks.length === 0) {
+    return [];
+  }
+
+  const redmineIds = redmineTasks.map(task => task.id);
+  
+  // Obtener información extendida de TaskDistributor
+  const extendedTasks = await prisma.tareaExtended.findMany({
+    where: {
+      redmineTaskId: {
+        in: redmineIds
+      }
+    },
+    include: {
+      asignaciones: {
+        include: {
+          equipo: true
+        },
+        orderBy: {
+          fechaAsignacion: 'desc'
+        },
+        take: 1
+      }
+    }
+  });
+
+  // Crear un mapa para acceso rápido
+  const extendedTasksMap = new Map();
+  extendedTasks.forEach(task => {
+    extendedTasksMap.set(task.redmineTaskId, task);
+  });
+
+  // Combinar datos
+  return redmineTasks.map(redmineTask => {
+    const extended = extendedTasksMap.get(redmineTask.id);
+    const currentAssignment = extended?.asignaciones?.[0];
+
+    // Extraer información de campos personalizados de Redmine
+    const customFields = redmineTask.custom_fields || [];
+    const departamento = customFields.find(cf => cf.name === 'departamento')?.value;
+    const responsableNegocio = customFields.find(cf => cf.name === 'responsable_negocio')?.value;
+    const funcional = customFields.find(cf => cf.name === 'funcional')?.value;
+
+    // Determinar la etapa de la tarea
+    let etapa = 'sin_planificar';
+    if (extended?.fechaInicioPlanificada && extended?.fechaFinPlanificada) {
+      const hoy = new Date();
+      const fechaInicio = new Date(extended.fechaInicioPlanificada);
+      const fechaFin = new Date(extended.fechaFinPlanificada);
+      
+      if (hoy < fechaInicio) {
+        etapa = 'planificada';
+      } else if (hoy >= fechaInicio && hoy <= fechaFin) {
+        etapa = 'en_curso';
+      } else if (hoy > fechaFin) {
+        etapa = 'finalizada';
+      }
+    }
+
+    return {
+      // Datos de Redmine
+      id: redmineTask.id,
+      subject: redmineTask.subject,
+      description: redmineTask.description,
+      status: redmineTask.status,
+      priority: redmineTask.priority,
+      author: redmineTask.author,
+      assigned_to: redmineTask.assigned_to,
+      created_on: redmineTask.created_on,
+      updated_on: redmineTask.updated_on,
+      due_date: redmineTask.due_date,
+      done_ratio: redmineTask.done_ratio,
+      project: redmineTask.project,
+      tracker: redmineTask.tracker,
+      
+      // Información de campos personalizados
+      departamento,
+      responsable_negocio: responsableNegocio,
+      funcional,
+      
+      // Datos extendidos de TaskDistributor
+      orden_prioridad: extended?.ordenPrioridad,
+      factor_carga: extended?.factorCarga,
+      estimacion_sprints: extended?.estimacionSprints,
+      fecha_inicio_planificada: extended?.fechaInicioPlanificada,
+      fecha_fin_planificada: extended?.fechaFinPlanificada,
+      
+      // Información del equipo asignado
+      equipo_asignado: currentAssignment ? {
+        id: currentAssignment.equipo.id,
+        nombre: currentAssignment.equipo.nombre,
+        tipo: currentAssignment.equipo.tipo,
+        fecha_asignacion: currentAssignment.fechaAsignacion
+      } : null,
+      
+      // Etapa calculada
+      etapa,
+      
+      // Metadata
+      tiene_responsable: !!responsableNegocio,
+      tiene_funcional: !!funcional,
+      esta_planificada: !!(extended?.fechaInicioPlanificada && extended?.fechaFinPlanificada),
+      tiene_equipo_asignado: !!currentAssignment
+    };
+  });
+};
+
+/**
+ * Construye filtros para Redmine basados en los parámetros de entrada
+ * @param {Object} filters - Filtros del frontend
+ * @returns {Object} Filtros para Redmine
+ */
+const buildRedmineFilters = (filters) => {
+  const redmineFilters = {};
+
+  if (filters.status_id) {
+    redmineFilters.status_id = filters.status_id;
+  }
+
+  if (filters.priority_id) {
+    redmineFilters.priority_id = filters.priority_id;
+  }
+
+  if (filters.tracker_id) {
+    redmineFilters.tracker_id = filters.tracker_id;
+  }
+
+  if (filters.assigned_to_id) {
+    redmineFilters.assigned_to_id = filters.assigned_to_id;
+  }
+
+  if (filters.project_id) {
+    redmineFilters.project_id = filters.project_id;
+  }
+
+  return redmineFilters;
+};
+
+/**
+ * Aplica filtros específicos de TaskDistributor a las tareas combinadas
+ * @param {Array} tasks - Tareas combinadas
+ * @param {Object} filters - Filtros a aplicar
+ * @param {Object} user - Usuario autenticado
+ * @returns {Array} Tareas filtradas
+ */
+const applyTaskDistributorFilters = (tasks, filters, user) => {
+  let filteredTasks = [...tasks];
+
+  // Filtro por rol de usuario (criterio de aceptación US-08)
+  if (user.role === 'NEGOCIO') {
+    // Los usuarios de negocio solo ven tareas de su departamento
+    // Por ahora, asumimos que el usuario pertenece a todos los departamentos
+    // En una implementación real, esto se determinaría por la relación usuario-departamento
+  }
+
+  // Filtro por departamento
+  if (filters.departamento) {
+    filteredTasks = filteredTasks.filter(task => 
+      task.departamento && task.departamento.toLowerCase().includes(filters.departamento.toLowerCase())
+    );
+  }
+
+  // Filtro por responsable de negocio
+  if (filters.responsable_negocio) {
+    filteredTasks = filteredTasks.filter(task => 
+      task.responsable_negocio && task.responsable_negocio.toLowerCase().includes(filters.responsable_negocio.toLowerCase())
+    );
+  }
+
+  // Filtro por equipo asignado
+  if (filters.equipo_id) {
+    const equipoId = parseInt(filters.equipo_id);
+    filteredTasks = filteredTasks.filter(task => 
+      task.equipo_asignado && task.equipo_asignado.id === equipoId
+    );
+  }
+
+  // Filtro por etapa
+  if (filters.etapa) {
+    filteredTasks = filteredTasks.filter(task => task.etapa === filters.etapa);
+  }
+
+  // Filtro para tareas pendientes de planificar
+  if (filters.pendientes_planificar === 'true') {
+    filteredTasks = filteredTasks.filter(task => 
+      task.tiene_responsable && task.tiene_funcional && !task.esta_planificada
+    );
+  }
+
+  // Filtro por fechas de planificación
+  if (filters.fecha_inicio_desde) {
+    const fechaDesde = new Date(filters.fecha_inicio_desde);
+    filteredTasks = filteredTasks.filter(task => 
+      task.fecha_inicio_planificada && new Date(task.fecha_inicio_planificada) >= fechaDesde
+    );
+  }
+
+  if (filters.fecha_inicio_hasta) {
+    const fechaHasta = new Date(filters.fecha_inicio_hasta);
+    filteredTasks = filteredTasks.filter(task => 
+      task.fecha_inicio_planificada && new Date(task.fecha_inicio_planificada) <= fechaHasta
+    );
+  }
+
+  if (filters.fecha_fin_desde) {
+    const fechaDesde = new Date(filters.fecha_fin_desde);
+    filteredTasks = filteredTasks.filter(task => 
+      task.fecha_fin_planificada && new Date(task.fecha_fin_planificada) >= fechaDesde
+    );
+  }
+
+  if (filters.fecha_fin_hasta) {
+    const fechaHasta = new Date(filters.fecha_fin_hasta);
+    filteredTasks = filteredTasks.filter(task => 
+      task.fecha_fin_planificada && new Date(task.fecha_fin_planificada) <= fechaHasta
+    );
+  }
+
+  // Filtro por estimación de sprints
+  if (filters.estimacion_sprints_min) {
+    const min = parseInt(filters.estimacion_sprints_min);
+    filteredTasks = filteredTasks.filter(task => 
+      task.estimacion_sprints && task.estimacion_sprints >= min
+    );
+  }
+
+  if (filters.estimacion_sprints_max) {
+    const max = parseInt(filters.estimacion_sprints_max);
+    filteredTasks = filteredTasks.filter(task => 
+      task.estimacion_sprints && task.estimacion_sprints <= max
+    );
+  }
+
+  return filteredTasks;
+};
+
+/**
+ * Aplica búsqueda por texto en los campos relevantes
+ * @param {Array} tasks - Tareas a filtrar
+ * @param {string} searchText - Texto de búsqueda
+ * @returns {Array} Tareas que coinciden con la búsqueda
+ */
+const applyTextSearch = (tasks, searchText) => {
+  if (!searchText || searchText.trim() === '') {
+    return tasks;
+  }
+
+  const searchLower = searchText.toLowerCase().trim();
+  
+  return tasks.filter(task => {
+    // Buscar en título
+    if (task.subject && task.subject.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    // Buscar en descripción
+    if (task.description && task.description.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    // Buscar en departamento
+    if (task.departamento && task.departamento.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    // Buscar en responsable de negocio
+    if (task.responsable_negocio && task.responsable_negocio.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    // Buscar en equipo asignado
+    if (task.equipo_asignado && task.equipo_asignado.nombre && 
+        task.equipo_asignado.nombre.toLowerCase().includes(searchLower)) {
+      return true;
+    }
+    
+    return false;
+  });
+};
+
+/**
+ * Aplica ordenamiento a las tareas
+ * @param {Array} tasks - Tareas a ordenar
+ * @param {string} sortBy - Campo por el que ordenar
+ * @param {string} sortOrder - Orden (asc/desc)
+ * @returns {Array} Tareas ordenadas
+ */
+const applySorting = (tasks, sortBy = 'created_on', sortOrder = 'desc') => {
+  return tasks.sort((a, b) => {
+    let valueA, valueB;
+    
+    switch (sortBy) {
+      case 'subject':
+        valueA = a.subject || '';
+        valueB = b.subject || '';
+        break;
+      case 'priority':
+        valueA = a.priority?.id || 0;
+        valueB = b.priority?.id || 0;
+        break;
+      case 'status':
+        valueA = a.status?.id || 0;
+        valueB = b.status?.id || 0;
+        break;
+      case 'created_on':
+        valueA = new Date(a.created_on || 0);
+        valueB = new Date(b.created_on || 0);
+        break;
+      case 'updated_on':
+        valueA = new Date(a.updated_on || 0);
+        valueB = new Date(b.updated_on || 0);
+        break;
+      case 'due_date':
+        valueA = a.due_date ? new Date(a.due_date) : new Date(0);
+        valueB = b.due_date ? new Date(b.due_date) : new Date(0);
+        break;
+      case 'orden_prioridad':
+        valueA = a.orden_prioridad || 999999;
+        valueB = b.orden_prioridad || 999999;
+        break;
+      case 'estimacion_sprints':
+        valueA = a.estimacion_sprints || 0;
+        valueB = b.estimacion_sprints || 0;
+        break;
+      default:
+        valueA = a.created_on || '';
+        valueB = b.created_on || '';
+    }
+    
+    if (sortOrder === 'asc') {
+      return valueA > valueB ? 1 : valueA < valueB ? -1 : 0;
+    } else {
+      return valueA < valueB ? 1 : valueA > valueB ? -1 : 0;
+    }
+  });
+};
+
+/**
+ * Obtiene tareas con filtros avanzados (US-08-02)
+ * @param {Object} filters - Filtros a aplicar
+ * @param {Object} user - Usuario autenticado
+ * @param {number} offset - Desplazamiento para paginación
+ * @param {number} limit - Límite de resultados
+ * @returns {Promise<Object>} Tareas filtradas con paginación
+ */
+const getTasksWithFilters = async (filters = {}, user, offset = 0, limit = 25) => {
+  try {
+    // 1. Construir filtros para Redmine
+    const redmineFilters = buildRedmineFilters(filters);
+    
+    // 2. Obtener tareas de Redmine (con paginación amplia para filtros posteriores)
+    const redmineResponse = await redmineService.getIssues(redmineFilters, 0, 1000);
+    
+    // 3. Combinar con datos extendidos de TaskDistributor
+    const combinedTasks = await combineTasksWithExtendedData(redmineResponse.issues);
+    
+    // 4. Aplicar filtros específicos de TaskDistributor
+    let filteredTasks = applyTaskDistributorFilters(combinedTasks, filters, user);
+    
+    // 5. Aplicar búsqueda por texto si se proporciona
+    if (filters.search) {
+      filteredTasks = applyTextSearch(filteredTasks, filters.search);
+    }
+    
+    // 6. Aplicar ordenamiento
+    const sortedTasks = applySorting(filteredTasks, filters.sort_by, filters.sort_order);
+    
+    // 7. Aplicar paginación
+    const total = sortedTasks.length;
+    const paginatedTasks = sortedTasks.slice(offset, offset + limit);
+    
+    return {
+      success: true,
+      data: {
+        tasks: paginatedTasks,
+        pagination: {
+          total,
+          offset,
+          limit,
+          pages: Math.ceil(total / limit),
+          current_page: Math.floor(offset / limit) + 1
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Error al obtener tareas con filtros:', error);
+    throw new Error('Error interno del servidor al obtener tareas');
+  }
+};
+
+/**
+ * Obtiene una tarea específica con información extendida
+ * @param {number} taskId - ID de la tarea
+ * @returns {Promise<Object>} Tarea con información extendida
+ */
+const getTaskById = async (taskId) => {
+  try {
+    // Obtener tarea de Redmine
+    const redmineResponse = await redmineService.getIssue(taskId);
+    
+    // Combinar con datos extendidos
+    const combinedTasks = await combineTasksWithExtendedData([redmineResponse.issue]);
+    
+    if (combinedTasks.length === 0) {
+      throw new Error('Tarea no encontrada');
+    }
+    
+    return {
+      success: true,
+      data: combinedTasks[0]
+    };
+  } catch (error) {
+    console.error('Error al obtener tarea:', error);
+    throw error;
+  }
+};
+
+module.exports = {
+  getTasksWithFilters,
+  getTaskById,
+  combineTasksWithExtendedData,
+  applyTextSearch,
+  applySorting,
+}; 
