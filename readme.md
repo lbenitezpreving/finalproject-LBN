@@ -208,6 +208,8 @@ Para la primera entrega del proyecto no se realizó pull request debido a que no
 
 **Pull Request 2**
 
+https://github.com/LIDR-academy/AI4Devs-finalproject/pull/42
+
 **Título:** Implementación de la estructura base del proyecto TaskDistributor
 
 **Descripción:** 
