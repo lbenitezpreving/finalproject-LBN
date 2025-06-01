@@ -4,9 +4,13 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
+// Importar configuración de Swagger
+const { specs, swaggerUi, swaggerConfig } = require('./config/swagger');
+
 // Importar rutas
 const authRoutes = require('./api/routes/authRoutes');
 const taskRoutes = require('./api/routes/taskRoutes');
+const redmineRoutes = require('./api/routes/redmine.routes');
 
 // Importar configuración de base de datos
 const { disconnectDatabase } = require('./config/database');
@@ -14,7 +18,16 @@ const { disconnectDatabase } = require('./config/database');
 const app = express();
 
 // Middleware de seguridad
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+}));
 
 // Configuración de CORS
 app.use(cors({
@@ -47,15 +60,25 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Rutas de la API
-app.use('/api/auth', authRoutes);
-app.use('/api/tasks', taskRoutes);
+// Documentación de la API con Swagger
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerConfig));
 
-// Ruta para documentación de la API (futuro)
-app.get('/api/docs', (req, res) => {
+// Endpoint JSON de la documentación
+app.get('/api/docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(specs);
+});
+
+// Información básica de la API
+app.get('/api', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Documentación de la API',
+    message: 'TaskDistributor API',
+    version: '1.0.0',
+    documentation: {
+      swagger: '/api/docs',
+      json: '/api/docs.json'
+    },
     endpoints: {
       auth: {
         login: 'POST /api/auth/login',
@@ -68,10 +91,24 @@ app.get('/api/docs', (req, res) => {
         detail: 'GET /api/tasks/:id',
         stats: 'GET /api/tasks/stats',
         filterOptions: 'GET /api/tasks/filter-options'
+      },
+      redmine: {
+        issues: 'GET /api/redmine/issues',
+        issue: 'GET /api/redmine/issues/:id',
+        createIssue: 'POST /api/redmine/issues',
+        updateIssue: 'PUT /api/redmine/issues/:id',
+        projects: 'GET /api/redmine/projects',
+        users: 'GET /api/redmine/users',
+        sync: 'POST /api/redmine/sync'
       }
     }
   });
 });
+
+// Rutas de la API
+app.use('/api/auth', authRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/redmine', redmineRoutes);
 
 // Middleware para rutas no encontradas
 app.use('*', (req, res) => {
