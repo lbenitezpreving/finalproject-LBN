@@ -198,7 +198,85 @@ Adicionalmente, en función del tiempo disponible, sería interesante abordar lo
 
 **Pull Request 1**
 
+**Título:** No se realizó Pull Request para la Entrega 1
+
+**Descripción:** 
+Para la primera entrega del proyecto no se realizó pull request debido a que no se conocía el formato de entrega requerido. En su lugar, se realizó la entrega de todo el trabajo desarrollado hasta ese momento de la aplicación TaskDistributor a través del formulario correspondiente proporcionado para la entrega.
+
+**Cambios incluidos en la entrega 1:**
+- Documentación inicial del proyecto (PRD, modelo de datos, historias de usuario)
+
 **Pull Request 2**
+
+**Título:** Implementación de la estructura base del proyecto TaskDistributor
+
+**Descripción:** 
+Esta pull request establece la arquitectura fundamental del proyecto TaskDistributor, implementando la estructura completa del frontend y backend, el modelo de datos definitivo y la configuración del entorno de desarrollo con Redmine local.
+
+**Frontend (@frontend):**
+- **Tecnologías implementadas:** React 19.1.0 con TypeScript, React Router DOM para navegación, Bootstrap 5.3.6 para estilos
+- **Arquitectura:** Estructura modular organizada en `components/`, `pages/`, `services/`, `hooks/`, `context/`, `types/` y `utils/`
+- **Componentes desarrollados:** 
+  - Estructura base en `components/layout/` para la navegación y layout principal
+  - Módulo `components/tasks/` para la gestión de tareas
+  - Módulo `components/gantt/` para visualización de diagramas Gantt
+- **Librerías integradas:** 
+  - Axios para comunicación con API
+  - Formik + Yup para manejo de formularios y validaciones
+  - Recharts para gráficos y visualizaciones
+  - FontAwesome para iconografía
+  - JWT-decode para manejo de autenticación
+- **Configuración:** Setup completo de TypeScript con tipos personalizados, configuración de testing con Jest y React Testing Library
+
+**Backend (@backend):**
+- **Tecnologías implementadas:** Node.js 18+ con Express.js 4.21.2, Prisma ORM 6.8.2, PostgreSQL
+- **Arquitectura:** Estructura de API REST organizada en `routes/`, `controllers/`, `services/`, `middlewares/`, `models/` y `utils/`
+- **Funcionalidades base:**
+  - Sistema de autenticación con JWT y bcrypt
+  - Middleware de seguridad (Helmet, CORS, rate limiting)
+  - Logging con Morgan
+  - Configuración de entorno con dotenv
+- **Scripts automatizados:**
+  - `db:setup`: Pipeline completo de configuración de base de datos
+  - `db:partition`: Scripts para particionamiento de tablas de historial
+  - `db:seed`: Población inicial de datos de prueba
+  - `prisma:*`: Gestión completa del schema y migraciones
+
+**Schema Prisma (@schema.prisma):**
+- **Modelo de datos implementado:** 6 entidades principales con relaciones completas
+  - `TareaExtended`: Almacena información adicional de tareas de Redmine (orden prioridad, factor carga, estimaciones)
+  - `Equipo`: Gestión de equipos internos/externos con capacidades y tipos
+  - `Departamento`: Departamentos de negocio con estados activo/inactivo
+  - `MatrizAfinidad`: Relaciones de afinidad equipo-departamento para el sistema de recomendación
+  - `Asignacion`: Historial de asignaciones de tareas a equipos
+  - `HistorialEstimacion`: Auditoría de cambios en estimaciones (preparado para particionamiento)
+  - `User`: Sistema de autenticación con roles (NEGOCIO, TECNOLOGIA, ADMIN)
+- **Optimizaciones implementadas:**
+  - Índices estratégicos en campos de búsqueda frecuente
+  - Constraints únicos para integridad de datos
+  - Mapeo personalizado de nombres de tablas y campos
+  - Preparación para particionamiento por fechas en tabla de historial
+
+**Entorno de desarrollo (@redmine-docker):**
+- **Servidor Redmine local:** Configuración completa con Docker Compose para desarrollo y testing
+- **Servicios incluidos:**
+  - Redmine con base de datos PostgreSQL dedicada
+  - Nginx como reverse proxy
+  - Scripts de inicialización automática
+  - Configuración de plugins y personalización
+- **Integración:** Variables de entorno configuradas para conexión con el backend de TaskDistributor
+- **Beneficios:** Entorno aislado y reproducible para pruebas sin dependencia de sistemas externos
+
+**Cambios técnicos destacados:**
+- Configuración de TypeScript estricta en frontend
+- Implementación de middleware de seguridad y validación en backend
+- Sistema de migraciones automáticas con Prisma
+- Configuración de testing y linting en ambos proyectos
+- Variables de entorno documentadas y ejemplos incluidos
+
+**Estado del proyecto:**
+La estructura base está completamente funcional y preparada para el desarrollo de las historias de usuario principales. El entorno permite desarrollo local independiente (por ahora no están interconectadas entre si) con todas las herramientas necesarias para testing e integración.
+Se han implementado las funcionalidades de algunos casos de uso principales, pero aún falta la integración completa entre Redmine y TaskDistributor.
 
 **Pull Request 3**
 
