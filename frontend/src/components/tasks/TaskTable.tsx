@@ -223,7 +223,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
               </th>
               <th>Responsable</th>
               <th>Equipo</th>
-              <th>Estimación</th>
+              <th>Estimación / Recursos</th>
               <th>Fechas</th>
               <th>Estado</th>
               <th>Acciones</th>

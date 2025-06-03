@@ -138,7 +138,18 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
       
       <td>
         <div className="small">
-          {task.sprints ? `${task.sprints} sprints` : '-'}
+          {task.sprints ? (
+            <div>
+              <div><strong>{task.sprints}</strong> sprint{task.sprints !== 1 ? 's' : ''}</div>
+              {task.loadFactor && (
+                <div className="text-muted">
+                  {task.loadFactor} trabajador{task.loadFactor !== 1 ? 'es' : ''}
+                </div>
+              )}
+            </div>
+          ) : (
+            '-'
+          )}
         </div>
       </td>
       

@@ -3,7 +3,6 @@ import { Modal, Button, Form, Alert, Row, Col, Spinner } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalculator, faTimes, faSave, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { Task, TaskStage } from '../../../types';
-import { getTaskStage } from '../../../services/mockData/tasks';
 import SprintEstimationInput from './SprintEstimationInput';
 import LoadFactorInput from './LoadFactorInput';
 import './TaskEstimationModal.css';
