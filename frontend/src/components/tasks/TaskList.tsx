@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useUrlParams } from '../../hooks/useUrlParams';
 import TaskFilterPanel from './TaskFilterPanel';
 import TaskTable from './TaskTable';
+import TaskEstimationModal from './estimation/TaskEstimationModal';
 import './TaskList.css';
 
 const TaskList: React.FC = () => {
@@ -26,6 +27,10 @@ const TaskList: React.FC = () => {
   // Estados de filtros y ordenamiento
   const [filters, setFilters] = useState<TaskFilters>({});
   const [sort, setSort] = useState<SortConfig>({ field: 'id', direction: 'desc' });
+  
+  // Estados del modal de estimación
+  const [showEstimationModal, setShowEstimationModal] = useState(false);
+  const [selectedTaskForEstimation, setSelectedTaskForEstimation] = useState<(Task & { stage: TaskStage }) | null>(null);
   
   // Cargar filtros desde URL al montar el componente
   useEffect(() => {
@@ -66,6 +71,34 @@ const TaskList: React.FC = () => {
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
+  
+  // Manejar click en tarea para estimación
+  const handleEstimateTask = useCallback((task: Task & { stage: TaskStage }) => {
+    setSelectedTaskForEstimation(task);
+    setShowEstimationModal(true);
+  }, []);
+
+  // Manejar guardado de estimación
+  const handleSaveEstimation = useCallback(async (taskId: number, sprints: number, loadFactor: number) => {
+    try {
+      await TaskService.updateTaskEstimation(taskId, sprints, loadFactor);
+      
+      // Recargar las tareas para mostrar los cambios
+      await loadTasks();
+      
+      // Mostrar mensaje de éxito
+      setError(undefined);
+    } catch (err) {
+      console.error('Error updating task estimation:', err);
+      throw err; // Re-lanzar para que el modal lo maneje
+    }
+  }, [loadTasks]);
+
+  // Cerrar modal de estimación
+  const handleCloseEstimationModal = useCallback(() => {
+    setShowEstimationModal(false);
+    setSelectedTaskForEstimation(null);
+  }, []);
   
   // Manejar cambios en filtros
   const handleFiltersChange = useCallback((newFilters: TaskFilters) => {
@@ -180,9 +213,18 @@ const TaskList: React.FC = () => {
             onTaskClick={handleTaskClick}
             onPageChange={handlePageChange}
             onSortChange={handleSortChange}
+            onEstimateTask={handleEstimateTask}
           />
         </Card.Body>
       </Card>
+
+      {/* Modal de estimación */}
+      <TaskEstimationModal
+        show={showEstimationModal}
+        task={selectedTaskForEstimation}
+        onHide={handleCloseEstimationModal}
+        onSave={handleSaveEstimation}
+      />
     </div>
   );
 };

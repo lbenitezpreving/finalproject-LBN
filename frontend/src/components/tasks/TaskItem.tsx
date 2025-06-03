@@ -18,9 +18,10 @@ import { getUserName } from '../../services/mockData/users';
 interface TaskItemProps {
   task: Task & { stage: TaskStage };
   onClick?: (task: Task & { stage: TaskStage }) => void;
+  actionButtons?: React.ReactNode;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, onClick }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => {
   
   const getStageColor = (stage: TaskStage): string => {
     switch (stage) {
@@ -160,6 +161,10 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick }) => {
             <Badge bg="danger" className="small">Sin estimación</Badge>
           )}
         </div>
+      </td>
+      
+      <td>
+        {actionButtons}
       </td>
     </tr>
   );

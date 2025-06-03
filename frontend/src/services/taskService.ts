@@ -238,4 +238,53 @@ export class TaskService {
       filename
     };
   }
+  
+  /**
+   * Actualizar estimación de una tarea
+   */
+  static async updateTaskEstimation(
+    taskId: number,
+    sprints: number,
+    loadFactor: number
+  ): Promise<Task & { stage: TaskStage }> {
+    await delay(500); // Simular delay de red
+    
+    const taskIndex = mockTasks.findIndex(task => task.id === taskId);
+    
+    if (taskIndex === -1) {
+      throw new Error(`Tarea con ID ${taskId} no encontrada`);
+    }
+    
+    const task = mockTasks[taskIndex];
+    
+    // Verificar que la tarea esté en estado correcto para estimación
+    const currentStage = getTaskStage(task);
+    if (currentStage !== TaskStage.PENDING_PLANNING) {
+      throw new Error(`No se puede estimar la tarea en estado: ${currentStage}`);
+    }
+    
+    // Validar datos de entrada
+    if (!sprints || sprints <= 0) {
+      throw new Error('La estimación en sprints debe ser mayor a 0');
+    }
+    
+    if (!loadFactor || loadFactor <= 0) {
+      throw new Error('El factor de carga debe ser mayor a 0');
+    }
+    
+    // Actualizar la tarea
+    mockTasks[taskIndex] = {
+      ...task,
+      sprints,
+      loadFactor,
+      updatedAt: new Date()
+    };
+    
+    // Retornar la tarea actualizada con su stage
+    const updatedTask = mockTasks[taskIndex];
+    return {
+      ...updatedTask,
+      stage: getTaskStage(updatedTask)
+    };
+  }
 } 

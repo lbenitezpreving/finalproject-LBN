@@ -1,8 +1,15 @@
 import React from 'react';
-import { Table, Pagination, Spinner, Alert } from 'react-bootstrap';
+import { Table, Pagination, Alert, Spinner, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSort, faSortUp, faSortDown } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStage, SortConfig, PaginationInfo } from '../../types';
+import { 
+  faSort, 
+  faSortUp, 
+  faSortDown,
+  faCalculator
+} from '@fortawesome/free-solid-svg-icons';
+import { Task, TaskStage, PaginationInfo, SortConfig } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { UserRole } from '../../types';
 import TaskItem from './TaskItem';
 
 interface TaskTableProps {
@@ -14,6 +21,7 @@ interface TaskTableProps {
   onTaskClick?: (task: Task & { stage: TaskStage }) => void;
   onPageChange?: (page: number) => void;
   onSortChange?: (field: string) => void;
+  onEstimateTask?: (task: Task & { stage: TaskStage }) => void;
 }
 
 const TaskTable: React.FC<TaskTableProps> = ({
@@ -24,9 +32,11 @@ const TaskTable: React.FC<TaskTableProps> = ({
   sort,
   onTaskClick,
   onPageChange,
-  onSortChange
+  onSortChange,
+  onEstimateTask
 }) => {
-  
+  const { user } = useAuth();
+
   const getSortIcon = (field: string) => {
     if (!sort || sort.field !== field) {
       return faSort;
@@ -39,7 +49,31 @@ const TaskTable: React.FC<TaskTableProps> = ({
       onSortChange(field);
     }
   };
-  
+
+  const canEstimate = (task: Task & { stage: TaskStage }): boolean => {
+    return user?.role === UserRole.TECNOLOGIA && task.stage === TaskStage.PENDING_PLANNING;
+  };
+
+  const renderActionButtons = (task: Task & { stage: TaskStage }) => {
+    return (
+      <div className="d-flex gap-1">
+        {canEstimate(task) && (
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEstimateTask?.(task);
+            }}
+            title="Estimar tarea"
+          >
+            <FontAwesomeIcon icon={faCalculator} />
+          </Button>
+        )}
+      </div>
+    );
+  };
+
   const renderPagination = () => {
     if (!pagination || pagination.totalPages <= 1) return null;
     
@@ -102,25 +136,37 @@ const TaskTable: React.FC<TaskTableProps> = ({
     );
     
     return (
-      <div className="d-flex justify-content-between align-items-center mt-3">
-        <div className="text-muted">
-          Mostrando {((currentPage - 1) * pagination.pageSize) + 1} - {Math.min(currentPage * pagination.pageSize, pagination.totalItems)} de {pagination.totalItems} tareas
-        </div>
-        <Pagination className="mb-0">
-          {items}
-        </Pagination>
+      <div className="d-flex justify-content-center mt-3">
+        <Pagination>{items}</Pagination>
       </div>
     );
   };
-  
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" variant="primary" />
+        <div className="mt-2">Cargando tareas...</div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <Alert variant="danger">
-        <strong>Error:</strong> {error}
+      <Alert variant="danger" className="m-3">
+        {error}
       </Alert>
     );
   }
-  
+
+  if (!tasks || tasks.length === 0) {
+    return (
+      <Alert variant="info" className="m-3">
+        No se encontraron tareas que coincidan con los criterios de búsqueda.
+      </Alert>
+    );
+  }
+
   return (
     <div className="task-table">
       <div className="table-responsive">
@@ -178,46 +224,20 @@ const TaskTable: React.FC<TaskTableProps> = ({
               <th>Responsable</th>
               <th>Equipo</th>
               <th>Estimación</th>
-              <th 
-                style={{ cursor: onSortChange ? 'pointer' : 'default' }}
-                onClick={() => handleSort('startDate')}
-              >
-                Fechas
-                {onSortChange && (
-                  <FontAwesomeIcon 
-                    icon={getSortIcon('startDate')} 
-                    className="ms-1" 
-                  />
-                )}
-              </th>
-              <th>Alertas</th>
+              <th>Fechas</th>
+              <th>Estado</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={9} className="text-center py-4">
-                  <Spinner animation="border" role="status">
-                    <span className="visually-hidden">Cargando...</span>
-                  </Spinner>
-                  <div className="mt-2">Cargando tareas...</div>
-                </td>
-              </tr>
-            ) : tasks.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="text-center py-4 text-muted">
-                  No se encontraron tareas que coincidan con los criterios de búsqueda.
-                </td>
-              </tr>
-            ) : (
-              tasks.map(task => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onClick={onTaskClick}
-                />
-              ))
-            )}
+            {tasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onClick={onTaskClick}
+                actionButtons={renderActionButtons(task)}
+              />
+            ))}
           </tbody>
         </Table>
       </div>
