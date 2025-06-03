@@ -5,9 +5,12 @@ import {
   SearchParams, 
   SortConfig, 
   TaskStage,
-  UserRole 
+  UserRole,
+  TeamRecommendation
 } from '../types';
 import { mockTasks, getTasksWithStage, getTaskStage } from './mockData/tasks';
+import { mockTeams, getTeamById } from './mockData/teams';
+import { getAffinityByTeamAndDepartment } from './mockData/affinityMatrix';
 
 // Simular delay de red
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -286,5 +289,265 @@ export class TaskService {
       ...updatedTask,
       stage: getTaskStage(updatedTask)
     };
+  }
+
+  /**
+   * Obtener recomendaciones de equipos para una tarea
+   */
+  static async getTeamRecommendations(taskId: number): Promise<TeamRecommendation[]> {
+    await delay(800); // Simular algoritmo complejo
+    
+    const task = mockTasks.find(t => t.id === taskId);
+    if (!task) {
+      throw new Error(`Tarea con ID ${taskId} no encontrada`);
+    }
+
+    // Verificar que la tarea esté en estado correcto
+    const currentStage = getTaskStage(task);
+    if (currentStage !== TaskStage.PENDING_PLANNING) {
+      throw new Error(`No se pueden obtener recomendaciones para tarea en estado: ${currentStage}`);
+    }
+
+    if (!task.sprints || !task.loadFactor) {
+      throw new Error('La tarea debe tener estimación para obtener recomendaciones');
+    }
+
+    // Obtener tareas planificadas para calcular cargas
+    const plannedTasks = getTasksWithStage().filter(t => 
+      t.stage === TaskStage.PLANNED || t.stage === TaskStage.IN_PROGRESS
+    );
+
+    const recommendations: TeamRecommendation[] = [];
+
+    // Evaluar cada equipo
+    for (const team of mockTeams) {
+      // Calcular fechas posibles
+      const { possibleStartDate, possibleEndDate } = this.calculatePossibleDates(
+        team.id, 
+        task.sprints, 
+        task.loadFactor, 
+        plannedTasks
+      );
+
+      // Obtener afinidad con el departamento
+      const affinity = getAffinityByTeamAndDepartment(team.id, task.department);
+
+      // Calcular capacidad disponible
+      const availableCapacity = Math.max(0, team.capacity - team.currentLoad);
+
+      // Calcular puntuación
+      const score = this.calculateRecommendationScore(
+        affinity,
+        availableCapacity,
+        team.capacity,
+        possibleStartDate,
+        team.isExternal
+      );
+
+      recommendations.push({
+        teamId: team.id,
+        teamName: team.name,
+        affinity,
+        currentLoad: team.currentLoad,
+        availableCapacity,
+        possibleStartDate,
+        possibleEndDate,
+        score
+      });
+    }
+
+    // Ordenar por puntuación (mayor a menor)
+    return recommendations.sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Asignar equipo y fechas a una tarea
+   */
+  static async assignTeamAndDates(
+    taskId: number,
+    teamId: number,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Task & { stage: TaskStage }> {
+    await delay(600); // Simular procesamiento
+    
+    const taskIndex = mockTasks.findIndex(task => task.id === taskId);
+    
+    if (taskIndex === -1) {
+      throw new Error(`Tarea con ID ${taskId} no encontrada`);
+    }
+
+    const task = mockTasks[taskIndex];
+    
+    // Verificar que la tarea esté en estado correcto
+    const currentStage = getTaskStage(task);
+    if (currentStage !== TaskStage.PENDING_PLANNING) {
+      throw new Error(`No se puede planificar la tarea en estado: ${currentStage}`);
+    }
+
+    // Verificar que el equipo existe
+    const team = getTeamById(teamId);
+    if (!team) {
+      throw new Error(`Equipo con ID ${teamId} no encontrado`);
+    }
+
+    // Validar fechas
+    if (endDate <= startDate) {
+      throw new Error('La fecha de fin debe ser posterior a la fecha de inicio');
+    }
+
+    // Actualizar la tarea
+    mockTasks[taskIndex] = {
+      ...task,
+      team: teamId,
+      startDate,
+      endDate,
+      updatedAt: new Date()
+    };
+    
+    // Retornar la tarea actualizada con su nuevo stage
+    const updatedTask = mockTasks[taskIndex];
+    return {
+      ...updatedTask,
+      stage: getTaskStage(updatedTask)
+    };
+  }
+
+  /**
+   * Verificar conflictos de planificación para un equipo
+   */
+  static async checkTeamConflicts(
+    teamId: number,
+    startDate: Date,
+    endDate: Date,
+    excludeTaskId?: number
+  ): Promise<{ hasConflicts: boolean; conflicts: string[]; warnings: string[] }> {
+    await delay(300);
+
+    const team = getTeamById(teamId);
+    if (!team) {
+      throw new Error(`Equipo con ID ${teamId} no encontrado`);
+    }
+
+    // Obtener tareas planificadas del equipo
+    const teamTasks = getTasksWithStage().filter(t => 
+      t.team === teamId && 
+      (t.stage === TaskStage.PLANNED || t.stage === TaskStage.IN_PROGRESS) &&
+      t.id !== excludeTaskId
+    );
+
+    const conflicts: string[] = [];
+    const warnings: string[] = [];
+
+    // Verificar solapamientos de fechas
+    for (const existingTask of teamTasks) {
+      if (existingTask.startDate && existingTask.endDate) {
+        const taskStart = new Date(existingTask.startDate);
+        const taskEnd = new Date(existingTask.endDate);
+
+        // Verificar solapamiento
+        if (
+          (startDate >= taskStart && startDate <= taskEnd) ||
+          (endDate >= taskStart && endDate <= taskEnd) ||
+          (startDate <= taskStart && endDate >= taskEnd)
+        ) {
+          warnings.push(
+            `Solapamiento con tarea #${existingTask.id} "${existingTask.subject}" (${taskStart.toLocaleDateString()} - ${taskEnd.toLocaleDateString()})`
+          );
+        }
+      }
+    }
+
+    // Calcular carga proyectada
+    const currentLoad = team.currentLoad;
+    const projectedLoad = currentLoad + 1; // Simplificado: asumir que cada tarea añade 1 de carga
+
+    if (projectedLoad > team.capacity) {
+      warnings.push(
+        `El equipo estaría sobrecargado: ${projectedLoad.toFixed(1)}/${team.capacity} de capacidad`
+      );
+    }
+
+    // Verificar disponibilidad (simplificado)
+    const today = new Date();
+    if (startDate < today) {
+      conflicts.push('La fecha de inicio no puede ser anterior a hoy');
+    }
+
+    return {
+      hasConflicts: conflicts.length > 0,
+      conflicts,
+      warnings
+    };
+  }
+
+  /**
+   * Calcular fechas posibles para un equipo
+   */
+  private static calculatePossibleDates(
+    teamId: number,
+    sprints: number,
+    loadFactor: number,
+    plannedTasks: (Task & { stage: TaskStage })[]
+  ): { possibleStartDate: Date; possibleEndDate: Date } {
+    const team = getTeamById(teamId);
+    if (!team) {
+      throw new Error(`Equipo ${teamId} no encontrado`);
+    }
+
+    // Obtener la última fecha de finalización del equipo
+    const teamTasks = plannedTasks.filter(t => t.team === teamId && t.endDate);
+    
+    let latestEndDate = new Date();
+    if (teamTasks.length > 0) {
+      const endDates = teamTasks.map(t => new Date(t.endDate!));
+      latestEndDate = new Date(Math.max(...endDates.map(d => d.getTime())));
+    }
+
+    // Calcular fecha de inicio posible
+    // Si el equipo tiene capacidad disponible, puede empezar antes
+    const availableCapacity = team.capacity - team.currentLoad;
+    const possibleStartDate = availableCapacity >= loadFactor 
+      ? new Date() // Puede empezar ahora
+      : new Date(latestEndDate.getTime() + 24 * 60 * 60 * 1000); // Día siguiente al último proyecto
+
+    // Calcular fecha de fin (sprints * 2 semanas)
+    const durationMs = sprints * 14 * 24 * 60 * 60 * 1000; // 14 días por sprint
+    const possibleEndDate = new Date(possibleStartDate.getTime() + durationMs);
+
+    return { possibleStartDate, possibleEndDate };
+  }
+
+  /**
+   * Calcular puntuación de recomendación
+   */
+  private static calculateRecommendationScore(
+    affinity: number,
+    availableCapacity: number,
+    totalCapacity: number,
+    possibleStartDate: Date,
+    isExternal: boolean
+  ): number {
+    let score = 0;
+
+    // Factor de afinidad (40% del peso)
+    score += (affinity / 5) * 40;
+
+    // Factor de disponibilidad (35% del peso)
+    const capacityRatio = availableCapacity / totalCapacity;
+    score += capacityRatio * 35;
+
+    // Factor de tiempo (15% del peso) - cuanto antes pueda empezar, mejor
+    const today = new Date();
+    const daysUntilStart = Math.max(0, (possibleStartDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+    const timeScore = Math.max(0, 15 - (daysUntilStart / 7)); // Menos puntos por cada semana de retraso
+    score += timeScore;
+
+    // Penalización por equipos externos (10% del peso)
+    if (!isExternal) {
+      score += 10; // Bonus por equipo interno
+    }
+
+    return Math.round(score * 10) / 10; // Redondear a 1 decimal
   }
 } 

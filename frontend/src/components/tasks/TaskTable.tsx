@@ -5,7 +5,8 @@ import {
   faSort, 
   faSortUp, 
   faSortDown,
-  faCalculator
+  faCalculator,
+  faCalendarPlus
 } from '@fortawesome/free-solid-svg-icons';
 import { Task, TaskStage, PaginationInfo, SortConfig } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -22,6 +23,7 @@ interface TaskTableProps {
   onPageChange?: (page: number) => void;
   onSortChange?: (field: string) => void;
   onEstimateTask?: (task: Task & { stage: TaskStage }) => void;
+  onPlanTask?: (task: Task & { stage: TaskStage }) => void;
 }
 
 const TaskTable: React.FC<TaskTableProps> = ({
@@ -33,7 +35,8 @@ const TaskTable: React.FC<TaskTableProps> = ({
   onTaskClick,
   onPageChange,
   onSortChange,
-  onEstimateTask
+  onEstimateTask,
+  onPlanTask
 }) => {
   const { user } = useAuth();
 
@@ -54,6 +57,13 @@ const TaskTable: React.FC<TaskTableProps> = ({
     return user?.role === UserRole.TECNOLOGIA && task.stage === TaskStage.PENDING_PLANNING;
   };
 
+  const canPlan = (task: Task & { stage: TaskStage }): boolean => {
+    return user?.role === UserRole.TECNOLOGIA && 
+           task.stage === TaskStage.PENDING_PLANNING &&
+           !!task.sprints && 
+           !!task.loadFactor;
+  };
+
   const renderActionButtons = (task: Task & { stage: TaskStage }) => {
     return (
       <div className="d-flex gap-1">
@@ -68,6 +78,19 @@ const TaskTable: React.FC<TaskTableProps> = ({
             title="Estimar tarea"
           >
             <FontAwesomeIcon icon={faCalculator} />
+          </Button>
+        )}
+        {canPlan(task) && (
+          <Button
+            variant="outline-success"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlanTask?.(task);
+            }}
+            title="Planificar tarea"
+          >
+            <FontAwesomeIcon icon={faCalendarPlus} />
           </Button>
         )}
       </div>

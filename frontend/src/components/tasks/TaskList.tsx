@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Alert, Row, Col } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { Task, TaskStage, TaskFilters, PaginationInfo, SortConfig } from '../../types';
 import { TaskService } from '../../services/taskService';
 import { useAuth } from '../../context/AuthContext';
@@ -11,6 +12,7 @@ import './TaskList.css';
 
 const TaskList: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { getFiltersFromUrl, updateUrlFromFilters, clearFilters, getActiveFiltersCount } = useUrlParams();
   
   // Estados principales
@@ -77,6 +79,11 @@ const TaskList: React.FC = () => {
     setSelectedTaskForEstimation(task);
     setShowEstimationModal(true);
   }, []);
+
+  // Manejar click en tarea para planificación
+  const handlePlanTask = useCallback((task: Task & { stage: TaskStage }) => {
+    navigate(`/tasks/${task.id}/plan`);
+  }, [navigate]);
 
   // Manejar guardado de estimación
   const handleSaveEstimation = useCallback(async (taskId: number, sprints: number, loadFactor: number) => {
@@ -214,6 +221,7 @@ const TaskList: React.FC = () => {
             onPageChange={handlePageChange}
             onSortChange={handleSortChange}
             onEstimateTask={handleEstimateTask}
+            onPlanTask={handlePlanTask}
           />
         </Card.Body>
       </Card>
