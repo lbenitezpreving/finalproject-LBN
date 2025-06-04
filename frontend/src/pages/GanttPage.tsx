@@ -1,0 +1,230 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Container, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
+import { GanttService, GanttTask, GanttFilters } from '../services/ganttService';
+import GanttFiltersComponent from '../components/gantt/GanttFilters';
+import GanttStats from '../components/gantt/GanttStats';
+import GanttControls from '../components/gantt/GanttControls';
+import './GanttPage.css';
+
+// Declaración de tipo para Frappe Gantt
+declare const Gantt: any;
+
+const GanttPage: React.FC = () => {
+  // Estados
+  const [tasks, setTasks] = useState<GanttTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<GanttFilters>({});
+  const [viewMode, setViewMode] = useState<'Quarter Day' | 'Half Day' | 'Day' | 'Week' | 'Month'>('Week');
+  
+  // Referencias
+  const ganttContainerRef = useRef<HTMLDivElement>(null);
+  const ganttInstanceRef = useRef<any>(null);
+  
+  // Cargar script de Frappe Gantt
+  useEffect(() => {
+    const loadGanttScript = () => {
+      if (typeof window !== 'undefined' && !(window as any).Gantt) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js';
+        script.onload = () => {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css';
+          document.head.appendChild(link);
+          
+          loadGanttData();
+        };
+        document.head.appendChild(script);
+      } else {
+        loadGanttData();
+      }
+    };
+
+    loadGanttScript();
+  }, []);
+
+  // Cargar datos cuando cambien los filtros
+  useEffect(() => {
+    if (typeof (window as any).Gantt !== 'undefined') {
+      loadGanttData();
+    }
+  }, [filters]);
+  
+  // Cargar datos del Gantt
+  const loadGanttData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const ganttTasks = await GanttService.getGanttTasks(filters);
+      setTasks(ganttTasks);
+      
+      // Recrear el Gantt cuando cambien las tareas
+      if (ganttTasks.length > 0 && typeof (window as any).Gantt !== 'undefined') {
+        createGanttChart(ganttTasks);
+      }
+      
+    } catch (err) {
+      setError('Error al cargar los datos del diagrama Gantt');
+      console.error('Error loading Gantt data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Crear o actualizar el diagrama Gantt
+  const createGanttChart = (ganttTasks: GanttTask[]) => {
+    if (!ganttContainerRef.current || typeof (window as any).Gantt === 'undefined') return;
+    
+    // Limpiar el contenedor
+    ganttContainerRef.current.innerHTML = '';
+    
+    try {
+      // Crear nueva instancia de Gantt
+      ganttInstanceRef.current = new (window as any).Gantt(ganttContainerRef.current, ganttTasks, {
+        view_mode: viewMode,
+        date_format: 'YYYY-MM-DD',
+        language: 'es',
+        custom_popup_html: function(task: any) {
+          // Popup personalizado con información detallada
+          return `
+            <div class="gantt-popup">
+              <h6>${task.name}</h6>
+              <p><strong>Equipo:</strong> ${task.team || 'Sin asignar'}</p>
+              <p><strong>Departamento:</strong> ${task.department || 'Sin asignar'}</p>
+              <p><strong>Inicio:</strong> ${new Date(task.start).toLocaleDateString('es-ES')}</p>
+              <p><strong>Fin:</strong> ${new Date(task.end).toLocaleDateString('es-ES')}</p>
+              <p><strong>Progreso:</strong> ${task.progress}%</p>
+              ${task.loadFactor ? `<p><strong>Factor de Carga:</strong> ${task.loadFactor}</p>` : ''}
+            </div>
+          `;
+        },
+        on_click: function(task: any) {
+          console.log('Task clicked:', task);
+        },
+        on_progress_change: function(task: any, progress: number) {
+          console.log('Progress changed:', task.id, progress);
+        }
+      });
+    } catch (err) {
+      setError('Error al crear el diagrama Gantt');
+      console.error('Error creating Gantt chart:', err);
+    }
+  };
+  
+  // Cambiar modo de vista
+  const handleViewModeChange = (newViewMode: typeof viewMode) => {
+    setViewMode(newViewMode);
+    
+    if (ganttInstanceRef.current) {
+      ganttInstanceRef.current.change_view_mode(newViewMode);
+    }
+  };
+  
+  // Actualizar filtros
+  const handleFiltersChange = (newFilters: GanttFilters) => {
+    setFilters(newFilters);
+  };
+  
+  // Exportar a PDF (funcionalidad básica)
+  const handleExportPDF = () => {
+    // TODO: Implementar exportación a PDF
+    alert('Funcionalidad de exportación en desarrollo');
+  };
+  
+  // Renderizar contenido principal
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="text-center py-5">
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Cargando...</span>
+          </Spinner>
+          <p className="mt-2">Cargando diagrama Gantt...</p>
+        </div>
+      );
+    }
+    
+    if (error) {
+      return (
+        <Alert variant="danger" className="my-4">
+          <Alert.Heading>Error</Alert.Heading>
+          <p>{error}</p>
+        </Alert>
+      );
+    }
+    
+    if (tasks.length === 0) {
+      return (
+        <Alert variant="info" className="my-4">
+          <Alert.Heading>Sin datos</Alert.Heading>
+          <p>No se encontraron tareas planificadas que mostrar en el diagrama Gantt.</p>
+          <p>Asegúrate de que existen tareas con fechas de inicio y fin asignadas.</p>
+        </Alert>
+      );
+    }
+    
+    return (
+      <Card className="gantt-chart-card">
+        <Card.Header className="d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Diagrama de Gantt - Planificación de Proyectos</h5>
+          <GanttControls 
+            viewMode={viewMode}
+            onViewModeChange={handleViewModeChange}
+            onExportPDF={handleExportPDF}
+            tasksCount={tasks.length}
+          />
+        </Card.Header>
+        <Card.Body className="p-0">
+          <div 
+            ref={ganttContainerRef} 
+            className="gantt-container"
+            style={{ minHeight: '400px' }}
+          />
+        </Card.Body>
+      </Card>
+    );
+  };
+  
+  return (
+    <Container fluid className="gantt-page">
+      <Row className="mb-4">
+        <Col>
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <h1 className="h3 mb-1">Planificación Gantt</h1>
+              <p className="text-muted mb-0">
+                Visualización temporal de tareas y proyectos planificados
+              </p>
+            </div>
+          </div>
+        </Col>
+      </Row>
+      
+      <Row className="mb-4">
+        <Col lg={3}>
+          <GanttFiltersComponent 
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            loading={loading}
+          />
+        </Col>
+        <Col lg={9}>
+          <GanttStats 
+            filters={filters}
+            tasksCount={tasks.length}
+          />
+        </Col>
+      </Row>
+      
+      <Row>
+        <Col>
+          {renderContent()}
+        </Col>
+      </Row>
+    </Container>
+  );
+};
+
+export default GanttPage; 

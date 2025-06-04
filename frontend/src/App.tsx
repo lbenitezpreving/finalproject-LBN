@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import TaskManagement from './pages/TaskManagement';
 import TaskPlanningPage from './components/tasks/planning/TaskPlanningPage';
+import GanttPage from './pages/GanttPage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -81,6 +82,17 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <MainLayout>
               <TaskPlanningPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/gantt" 
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <GanttPage />
             </MainLayout>
           </ProtectedRoute>
         } 
