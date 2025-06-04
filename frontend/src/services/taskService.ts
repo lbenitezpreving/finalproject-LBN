@@ -6,15 +6,97 @@ import {
   SortConfig, 
   TaskStage,
   UserRole,
-  TeamRecommendation
+  TeamRecommendation,
+  CurrentProject
 } from '../types';
 import { mockTasks, getTasksWithStage, getTaskStage } from './mockData/tasks';
-import { mockTeams, getTeamById } from './mockData/teams';
+import { getTeamById, getAllTeamsWithCurrentLoad } from './mockData/teams';
 import { getAffinityByTeamAndDepartment } from './mockData/affinityMatrix';
-import { getCurrentProjectsByTeam, getProjectConflicts } from './mockData/currentProjects';
+import { getDepartmentById } from './mockData/departments';
 
 // Simular delay de red
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Adaptar Task a CurrentProject para mantener compatibilidad
+ */
+const adaptTaskToCurrentProject = (task: Task): CurrentProject => {
+  const department = getDepartmentById(task.department);
+  const now = new Date();
+  
+  // Determinar estado basado en fechas
+  let status: CurrentProject['status'] = 'in_progress';
+  if (task.startDate && task.endDate) {
+    const daysDiff = Math.ceil((task.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (now < task.startDate) {
+      status = 'starting_soon';
+    } else if (daysDiff <= 7) {
+      status = 'finishing_soon';
+    }
+  }
+
+  return {
+    id: task.id,
+    name: task.subject, // Mapear subject a name
+    startDate: task.startDate || new Date(),
+    endDate: task.endDate || new Date(),
+    status,
+    loadFactor: task.loadFactor || 1,
+    department: department?.name || 'Sin Departamento'
+  };
+};
+
+/**
+ * Obtener proyectos actuales de un equipo basado en las tareas
+ * Reemplaza getCurrentProjectsByTeam de currentProjects.ts
+ */
+const getCurrentProjectsByTeamFromTasks = (teamId: number): CurrentProject[] => {
+  const tasksWithStage = getTasksWithStage();
+  
+  // Filtrar tareas que están asignadas al equipo y en progreso o planificadas
+  const teamTasks = tasksWithStage.filter(task => 
+    task.team === teamId && 
+    (task.stage === TaskStage.PLANNED || task.stage === TaskStage.IN_PROGRESS) &&
+    task.startDate && 
+    task.endDate
+  );
+
+  return teamTasks.map(adaptTaskToCurrentProject);
+};
+
+/**
+ * Verificar conflictos de proyectos basado en tareas
+ * Reemplaza getProjectConflicts de currentProjects.ts
+ */
+const getProjectConflictsFromTasks = (
+  teamId: number, 
+  proposedStartDate: Date, 
+  proposedEndDate: Date
+): { conflictingProjects: CurrentProject[]; overlapDetails: string[] } => {
+  const currentProjects = getCurrentProjectsByTeamFromTasks(teamId);
+  const conflictingProjects: CurrentProject[] = [];
+  const overlapDetails: string[] = [];
+
+  currentProjects.forEach(project => {
+    const projectStart = new Date(project.startDate);
+    const projectEnd = new Date(project.endDate);
+
+    // Verificar solapamiento
+    if (
+      (proposedStartDate >= projectStart && proposedStartDate <= projectEnd) ||
+      (proposedEndDate >= projectStart && proposedEndDate <= projectEnd) ||
+      (proposedStartDate <= projectStart && proposedEndDate >= projectEnd)
+    ) {
+      conflictingProjects.push(project);
+      overlapDetails.push(
+        `Conflicto con "${project.name}" (${projectStart.toLocaleDateString('es-ES')} - ${projectEnd.toLocaleDateString('es-ES')})`
+      );
+    }
+  });
+
+  return { conflictingProjects, overlapDetails };
+};
 
 export class TaskService {
   
@@ -296,37 +378,23 @@ export class TaskService {
    * Obtener recomendaciones de equipos para una tarea
    */
   static async getTeamRecommendations(taskId: number): Promise<TeamRecommendation[]> {
-    await delay(800); // Simular algoritmo complejo
-    
+    await delay(800); // Simular procesamiento
+
     const task = mockTasks.find(t => t.id === taskId);
-    if (!task) {
-      throw new Error(`Tarea con ID ${taskId} no encontrada`);
+    if (!task || !task.sprints || !task.loadFactor) {
+      throw new Error('Tarea no encontrada o sin estimación completa');
     }
 
-    // Verificar que la tarea esté en estado correcto
-    const currentStage = getTaskStage(task);
-    if (currentStage !== TaskStage.PENDING_PLANNING) {
-      throw new Error(`No se pueden obtener recomendaciones para tarea en estado: ${currentStage}`);
-    }
-
-    if (!task.sprints || !task.loadFactor) {
-      throw new Error('La tarea debe tener estimación para obtener recomendaciones');
-    }
-
-    // Obtener tareas planificadas para calcular cargas
-    const plannedTasks = getTasksWithStage().filter(t => 
-      t.stage === TaskStage.PLANNED || t.stage === TaskStage.IN_PROGRESS
-    );
-
+    const plannedTasks = getTasksWithStage();
+    const teams = getAllTeamsWithCurrentLoad(); // Usar cargas dinámicas
     const recommendations: TeamRecommendation[] = [];
 
-    // Evaluar cada equipo
-    for (const team of mockTeams) {
+    for (const team of teams) {
       // Calcular fechas posibles
       const { possibleStartDate, possibleEndDate } = this.calculatePossibleDates(
-        team.id, 
-        task.sprints, 
-        task.loadFactor, 
+        team.id,
+        task.sprints,
+        task.loadFactor,
         plannedTasks
       );
 
@@ -337,7 +405,7 @@ export class TaskService {
       const availableCapacity = Math.max(0, team.capacity - team.currentLoad);
 
       // Obtener proyectos actuales del equipo
-      const currentProjects = getCurrentProjectsByTeam(team.id);
+      const currentProjects = getCurrentProjectsByTeamFromTasks(team.id);
 
       // Calcular puntuación
       const score = this.calculateRecommendationScore(
@@ -438,7 +506,7 @@ export class TaskService {
     const warnings: string[] = [];
 
     // Verificar conflictos con proyectos actuales usando la nueva lógica
-    const { conflictingProjects, overlapDetails } = getProjectConflicts(teamId, startDate, endDate);
+    const { conflictingProjects, overlapDetails } = getProjectConflictsFromTasks(teamId, startDate, endDate);
     
     if (conflictingProjects.length > 0) {
       warnings.push(...overlapDetails);
@@ -471,7 +539,7 @@ export class TaskService {
     }
 
     // Calcular carga proyectada incluyendo proyectos actuales
-    const currentProjectsLoad = getCurrentProjectsByTeam(teamId)
+    const currentProjectsLoad = getCurrentProjectsByTeamFromTasks(teamId)
       .filter(project => {
         const projectEnd = new Date(project.endDate);
         return projectEnd >= startDate; // Solo proyectos que se solapan con el período propuesto

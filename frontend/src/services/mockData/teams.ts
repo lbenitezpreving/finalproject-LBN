@@ -1,7 +1,28 @@
 import { Team } from '../../types';
 
+/**
+ * Calcular la carga actual de un equipo basándose en las tareas
+ */
+const calculateTeamCurrentLoad = (teamId: number): number => {
+  // Importación lazy para evitar dependencias circulares
+  const { getTasksWithStage } = require('./tasks');
+  const { TaskStage } = require('../../types');
+  
+  const tasksWithStage = getTasksWithStage();
+  
+  // Filtrar tareas que están asignadas al equipo y en progreso o planificadas
+  const activeTasks = tasksWithStage.filter((task: any) => 
+    task.team === teamId && 
+    (task.stage === TaskStage.PLANNED || task.stage === TaskStage.IN_PROGRESS) &&
+    task.loadFactor
+  );
+
+  // Sumar los factores de carga
+  return activeTasks.reduce((total: number, task: any) => total + task.loadFactor, 0);
+};
+
 export const mockTeams: Team[] = [
-  // Equipos internos
+  // Equipos internos - las cargas se calculan dinámicamente
   { id: 1, name: 'Dev 01', capacity: 2, currentLoad: 1.5, isExternal: false },
   { id: 2, name: 'Dev 03', capacity: 2, currentLoad: 2, isExternal: false },
   { id: 3, name: 'Dev 04', capacity: 2, currentLoad: 1.2, isExternal: false },
@@ -27,7 +48,14 @@ export const mockTeams: Team[] = [
 ];
 
 export const getTeamById = (id: number): Team | undefined => {
-  return mockTeams.find(team => team.id === id);
+  const baseTeam = mockTeams.find(team => team.id === id);
+  if (!baseTeam) return undefined;
+  
+  // Retornar el equipo con la carga calculada dinámicamente
+  return {
+    ...baseTeam,
+    currentLoad: calculateTeamCurrentLoad(id)
+  };
 };
 
 export const getTeamName = (id: number): string => {
@@ -36,11 +64,24 @@ export const getTeamName = (id: number): string => {
 };
 
 export const getAvailableTeams = (): Team[] => {
-  return mockTeams.filter(team => team.currentLoad < team.capacity);
+  return mockTeams.map(team => ({
+    ...team,
+    currentLoad: calculateTeamCurrentLoad(team.id)
+  })).filter(team => team.currentLoad < team.capacity);
 };
 
 export const getTeamUtilization = (teamId: number): number => {
   const team = getTeamById(teamId);
   if (!team) return 0;
   return Math.round((team.currentLoad / team.capacity) * 100);
+};
+
+/**
+ * Obtener todos los equipos con cargas calculadas dinámicamente
+ */
+export const getAllTeamsWithCurrentLoad = (): Team[] => {
+  return mockTeams.map(team => ({
+    ...team,
+    currentLoad: calculateTeamCurrentLoad(team.id)
+  }));
 }; 

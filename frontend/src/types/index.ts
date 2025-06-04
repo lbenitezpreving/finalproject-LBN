@@ -65,14 +65,16 @@ export interface AffinityMatrix {
 }
 
 // Tipo para proyectos actuales del equipo
+// NOTA: Esta interfaz es una representación adaptada de Task para mostrar proyectos actuales
+// Los datos reales provienen de Task y se adaptan dinámicamente en taskService.ts
 export interface CurrentProject {
   id: number;
-  name: string;
+  name: string; // Mapea a Task.subject
   startDate: Date;
   endDate: Date;
   status: 'in_progress' | 'finishing_soon' | 'starting_soon';
   loadFactor: number; // Factor de carga que consume del equipo
-  department: string;
+  department: string; // Nombre del departamento (Task.department se convierte a string)
 }
 
 // Tipo para recomendaciones
@@ -85,7 +87,7 @@ export interface TeamRecommendation {
   possibleStartDate: Date;
   possibleEndDate: Date;
   score: number; // Puntuación global de la recomendación
-  currentProjects: CurrentProject[]; // Proyectos actuales del equipo
+  currentProjects: CurrentProject[]; // Proyectos actuales del equipo (adaptados de Task)
 }
 
 // Tipos para alertas
