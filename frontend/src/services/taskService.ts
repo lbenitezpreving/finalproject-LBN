@@ -11,6 +11,7 @@ import {
 import { mockTasks, getTasksWithStage, getTaskStage } from './mockData/tasks';
 import { mockTeams, getTeamById } from './mockData/teams';
 import { getAffinityByTeamAndDepartment } from './mockData/affinityMatrix';
+import { getCurrentProjectsByTeam, getProjectConflicts } from './mockData/currentProjects';
 
 // Simular delay de red
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -335,6 +336,9 @@ export class TaskService {
       // Calcular capacidad disponible
       const availableCapacity = Math.max(0, team.capacity - team.currentLoad);
 
+      // Obtener proyectos actuales del equipo
+      const currentProjects = getCurrentProjectsByTeam(team.id);
+
       // Calcular puntuación
       const score = this.calculateRecommendationScore(
         affinity,
@@ -352,7 +356,8 @@ export class TaskService {
         availableCapacity,
         possibleStartDate,
         possibleEndDate,
-        score
+        score,
+        currentProjects
       });
     }
 
@@ -429,17 +434,24 @@ export class TaskService {
       throw new Error(`Equipo con ID ${teamId} no encontrado`);
     }
 
-    // Obtener tareas planificadas del equipo
+    const conflicts: string[] = [];
+    const warnings: string[] = [];
+
+    // Verificar conflictos con proyectos actuales usando la nueva lógica
+    const { conflictingProjects, overlapDetails } = getProjectConflicts(teamId, startDate, endDate);
+    
+    if (conflictingProjects.length > 0) {
+      warnings.push(...overlapDetails);
+    }
+
+    // Obtener tareas planificadas del equipo (mantenemos la lógica existente para tareas del sistema)
     const teamTasks = getTasksWithStage().filter(t => 
       t.team === teamId && 
       (t.stage === TaskStage.PLANNED || t.stage === TaskStage.IN_PROGRESS) &&
       t.id !== excludeTaskId
     );
 
-    const conflicts: string[] = [];
-    const warnings: string[] = [];
-
-    // Verificar solapamientos de fechas
+    // Verificar solapamientos con tareas del sistema TaskDistributor
     for (const existingTask of teamTasks) {
       if (existingTask.startDate && existingTask.endDate) {
         const taskStart = new Date(existingTask.startDate);
@@ -452,19 +464,25 @@ export class TaskService {
           (startDate <= taskStart && endDate >= taskEnd)
         ) {
           warnings.push(
-            `Solapamiento con tarea #${existingTask.id} "${existingTask.subject}" (${taskStart.toLocaleDateString()} - ${taskEnd.toLocaleDateString()})`
+            `Solapamiento con tarea TaskDistributor #${existingTask.id} "${existingTask.subject}" (${taskStart.toLocaleDateString('es-ES')} - ${taskEnd.toLocaleDateString('es-ES')})`
           );
         }
       }
     }
 
-    // Calcular carga proyectada
-    const currentLoad = team.currentLoad;
-    const projectedLoad = currentLoad + 1; // Simplificado: asumir que cada tarea añade 1 de carga
+    // Calcular carga proyectada incluyendo proyectos actuales
+    const currentProjectsLoad = getCurrentProjectsByTeam(teamId)
+      .filter(project => {
+        const projectEnd = new Date(project.endDate);
+        return projectEnd >= startDate; // Solo proyectos que se solapan con el período propuesto
+      })
+      .reduce((total, project) => total + project.loadFactor, 0);
+
+    const projectedLoad = currentProjectsLoad + 1; // Asumir que la nueva tarea añade 1 de carga
 
     if (projectedLoad > team.capacity) {
       warnings.push(
-        `El equipo estaría sobrecargado: ${projectedLoad.toFixed(1)}/${team.capacity} de capacidad`
+        `El equipo estaría sobrecargado: ${projectedLoad.toFixed(1)}/${team.capacity} de capacidad considerando proyectos actuales`
       );
     }
 

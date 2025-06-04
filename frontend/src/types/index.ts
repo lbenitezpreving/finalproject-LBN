@@ -64,6 +64,17 @@ export interface AffinityMatrix {
   affinityLevel: number; // Nivel de afinidad (1-5)
 }
 
+// Tipo para proyectos actuales del equipo
+export interface CurrentProject {
+  id: number;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  status: 'in_progress' | 'finishing_soon' | 'starting_soon';
+  loadFactor: number; // Factor de carga que consume del equipo
+  department: string;
+}
+
 // Tipo para recomendaciones
 export interface TeamRecommendation {
   teamId: number;
@@ -74,6 +85,7 @@ export interface TeamRecommendation {
   possibleStartDate: Date;
   possibleEndDate: Date;
   score: number; // Puntuación global de la recomendación
+  currentProjects: CurrentProject[]; // Proyectos actuales del equipo
 }
 
 // Tipos para alertas

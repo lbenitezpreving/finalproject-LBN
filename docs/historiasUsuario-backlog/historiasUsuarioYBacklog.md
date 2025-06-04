@@ -237,10 +237,14 @@
 #### Criterios de Aceptación
 - El sistema debe mostrar todos los equipos disponibles ordenados según la recomendación
 - Para cada equipo debe mostrar métricas relevantes (carga actual, afinidad con el departamento, etc.)
+- Para cada equipo debe mostrar los proyectos/tareas actuales en curso con sus fechas de inicio y fin
+- La información de proyectos actuales debe incluir: nombre del proyecto/tarea, fecha de inicio, fecha de fin y estado visual (en progreso, próximo a vencer, etc.)
+- Se debe poder expandir/colapsar la información de proyectos actuales para mantener la legibilidad de las tarjetas
 - Al seleccionar un equipo, debe permitir asignar fechas de inicio y fin
 - El sistema debe validar que la fecha fin sea posterior a la fecha inicio
 - Las fechas deben sincronizarse con Redmine
 - El sistema debe mostrar advertencias si hay conflictos con otras tareas del mismo equipo
+- Las advertencias de conflictos deben ser más específicas al mostrar exactamente qué proyectos entran en conflicto con las fechas propuestas
 - Debe permitir filtrar equipos por diversos criterios
 
 #### Notas Adicionales
@@ -248,6 +252,8 @@
 - La interfaz debe mostrar claramente por qué se recomienda cada equipo (transparencia del algoritmo)
 - La interfaz debe incluir un calendario para facilitar la selección de fechas
 - Debe respetar la disponibilidad del equipo seleccionado
+- La visualización de proyectos actuales debe usar códigos de colores para indicar el estado temporal (en curso, próximo a finalizar, etc.)
+- Se debe incluir un tooltip o vista expandida que muestre más detalles de cada proyecto cuando sea necesario
 
 #### Historias de Usuario Relacionadas
 - US-05: Estimación de tarea por tecnología
@@ -258,8 +264,13 @@
 #### Tareas
 - Implementar algoritmo de recomendación
 - Desarrollar interfaz de visualización de recomendaciones
+- Implementar componente de visualización de proyectos actuales del equipo
+- Desarrollar lógica para obtener y mostrar proyectos en curso de cada equipo desde Redmine
+- Implementar códigos de colores y estados visuales para proyectos
+- Crear componente expandible/colapsable para información detallada de proyectos
 - Implementar selector de fechas con validaciones
 - Desarrollar lógica de verificación de conflictos
+- Mejorar algoritmo de detección de conflictos para mostrar proyectos específicos que se solapan
 - Integrar con datos de equipos y cargas
 - Implementar mecanismo de asignación y sincronización
 - Integrar con API de Redmine para actualización
@@ -268,7 +279,7 @@
 #### Estimación
 | Item | Impacto en usuario/negocio | Urgencia | Complejidad/Esfuerzo | Riesgos/Dependencias |
 |------|----------------------------|----------|----------------------|----------------------|
-| US-06: Asignación y planificación | Alto | Alta | Alta (10) | Alto - Requiere algoritmo complejo e integración con planificación |
+| US-06: Asignación y planificación | Alto | Alta | Alta (12) | Alto - Requiere algoritmo complejo e integración con planificación y datos de proyectos en tiempo real |
 
 ---
 

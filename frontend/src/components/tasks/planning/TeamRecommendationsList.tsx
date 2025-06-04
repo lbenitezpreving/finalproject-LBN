@@ -10,7 +10,9 @@ import {
   faExternalLinkAlt,
   faHome
 } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStage, TeamRecommendation } from '../../../types';
+import { TeamRecommendation, Task, TaskStage } from '../../../types';
+import CurrentProjectsList from './CurrentProjectsList';
+import './TeamRecommendationsList.css';
 
 interface TeamRecommendationsListProps {
   recommendations: TeamRecommendation[];
@@ -108,44 +110,28 @@ const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
   }
 
   return (
-    <div className="recommendations-container">
+    <div className="team-recommendations-list">
       <Row className="g-3">
         {recommendations.map((recommendation, index) => (
           <Col lg={6} key={recommendation.teamId}>
-            <Card 
-              className="recommendation-card h-100"
-              onClick={() => onTeamSelect(recommendation.teamId)}
-            >
-              <Card.Header>
-                <Row className="align-items-center">
-                  <Col>
-                    <div className="d-flex align-items-center">
-                      <FontAwesomeIcon 
-                        icon={isExternalTeam(recommendation.teamName) ? faExternalLinkAlt : faHome} 
-                        className="me-2" 
-                      />
-                      <h6 className="mb-0">{recommendation.teamName}</h6>
-                      <Badge 
-                        bg={isExternalTeam(recommendation.teamName) ? 'purple' : 'success'}
-                        className="ms-2"
-                      >
-                        {isExternalTeam(recommendation.teamName) ? 'Externo' : 'Interno'}
-                      </Badge>
-                    </div>
-                  </Col>
-                  <Col xs="auto">
-                    <div className="text-center">
-                      <div className={`recommendation-score ${getScoreClass(recommendation.score)}`}>
-                        {recommendation.score}
-                      </div>
-                      <small className="text-muted d-block">
-                        {getScoreText(recommendation.score)}
-                      </small>
-                    </div>
-                  </Col>
-                </Row>
+            <Card className="team-recommendation-card h-100">
+              <Card.Header className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 className="mb-0">{recommendation.teamName}</h6>
+                  {isExternalTeam(recommendation.teamName) && (
+                    <Badge bg="warning" text="dark" className="external-badge">Externo</Badge>
+                  )}
+                </div>
+                <div className="score-container">
+                  <span className={`score ${getScoreClass(recommendation.score)}`}>
+                    {recommendation.score}
+                  </span>
+                  <small className="d-block text-center score-text">
+                    {getScoreText(recommendation.score)}
+                  </small>
+                </div>
               </Card.Header>
-              
+
               <Card.Body>
                 {/* Ranking position */}
                 <div className="d-flex align-items-center mb-3">
@@ -219,6 +205,12 @@ const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
                   </Row>
                 </div>
 
+                {/* Proyectos actuales del equipo - NUEVA FUNCIONALIDAD */}
+                <CurrentProjectsList 
+                  projects={recommendation.currentProjects}
+                  teamName={recommendation.teamName}
+                />
+
                 {/* Razón de recomendación */}
                 <div className="mb-3">
                   <small className="text-muted d-block mb-1">¿Por qué se recomienda?</small>
@@ -236,7 +228,7 @@ const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
                 )}
               </Card.Body>
 
-              <Card.Footer className="bg-transparent">
+              <Card.Footer>
                 <Button 
                   variant="primary" 
                   className="w-100"
