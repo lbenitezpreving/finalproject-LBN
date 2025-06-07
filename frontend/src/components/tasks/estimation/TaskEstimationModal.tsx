@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Alert, Row, Col, Spinner } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalculator, faTimes, faSave, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStage } from '../../../types';
+import { Task, TaskStatus } from '../../../types';
 import SprintEstimationInput from './SprintEstimationInput';
 import LoadFactorInput from './LoadFactorInput';
 import './TaskEstimationModal.css';
 
 interface TaskEstimationModalProps {
   show: boolean;
-  task: (Task & { stage: TaskStage }) | null;
+  task: Task | null;
   onHide: () => void;
   onSave: (taskId: number, sprints: number, loadFactor: number) => Promise<void>;
 }
@@ -129,7 +129,19 @@ const TaskEstimationModal: React.FC<TaskEstimationModalProps> = ({
     }
   };
 
-  const canEstimate = task?.stage === TaskStage.PENDING_PLANNING;
+  // Condición actualizada para usar TaskStatus.BACKLOG
+  const canEstimate = task?.status === TaskStatus.BACKLOG;
+
+  const getStatusLabel = (status: TaskStatus): string => {
+    switch (status) {
+      case TaskStatus.BACKLOG: return 'Backlog';
+      case TaskStatus.TODO: return 'To Do';
+      case TaskStatus.DOING: return 'Doing';
+      case TaskStatus.DEMO: return 'Demo';
+      case TaskStatus.DONE: return 'Done';
+      default: return status;
+    }
+  };
 
   return (
     <Modal 
@@ -165,7 +177,7 @@ const TaskEstimationModal: React.FC<TaskEstimationModalProps> = ({
                   <div className="task-meta">
                     <small className="text-muted d-block">Prioridad: {task.priority}</small>
                     <small className="text-muted d-block">
-                      Estado: {task.stage === TaskStage.PENDING_PLANNING ? 'Pendiente Planificación' : task.stage}
+                      Estado: {getStatusLabel(task.status)}
                     </small>
                   </div>
                 </Col>
@@ -177,8 +189,8 @@ const TaskEstimationModal: React.FC<TaskEstimationModalProps> = ({
               <Alert variant="warning" className="mb-4">
                 <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
                 <strong>No se puede estimar esta tarea.</strong> 
-                Solo se pueden estimar tareas en estado "Pendiente de Planificación".
-                Esta tarea está en estado: {task.stage}
+                Solo se pueden estimar tareas en estado "Backlog" (pendientes de estimación).
+                Esta tarea está en estado: {getStatusLabel(task.status)}
               </Alert>
             )}
 

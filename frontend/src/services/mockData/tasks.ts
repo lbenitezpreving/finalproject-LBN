@@ -1,4 +1,4 @@
-import { Task, TaskStatus, TaskStage } from '../../types';
+import { Task, TaskStatus } from '../../types';
 
 export const mockTasks: Task[] = [
   // Tareas en backlog
@@ -6,7 +6,7 @@ export const mockTasks: Task[] = [
     id: 1,
     subject: 'Implementar sistema de notificaciones push',
     description: 'Desarrollar funcionalidad para enviar notificaciones push a usuarios móviles cuando se actualice el estado de sus tareas.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.BACKLOG,
     priority: 1,
     assignedTo: 4, // Carlos Martínez (Marketing)
     functional: 'https://docs.company.com/notificaciones-push.pdf',
@@ -19,7 +19,7 @@ export const mockTasks: Task[] = [
     id: 2,
     subject: 'Optimización de base de datos de clientes',
     description: 'Mejorar el rendimiento de las consultas de la base de datos de clientes para reducir tiempos de carga.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.BACKLOG,
     priority: 2,
     assignedTo: 6, // David Hernández (Ventas)
     functional: 'https://docs.company.com/optimizacion-bd.pdf',
@@ -34,7 +34,7 @@ export const mockTasks: Task[] = [
     id: 3,
     subject: 'Dashboard de métricas de RRHH',
     description: 'Crear dashboard para visualizar métricas clave de recursos humanos como rotación, satisfacción y productividad.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.BACKLOG,
     priority: 3,
     assignedTo: 8, // Roberto Moreno (RRHH)
     functional: 'https://docs.company.com/dashboard-rrhh.pdf',
@@ -49,7 +49,7 @@ export const mockTasks: Task[] = [
     id: 4,
     subject: 'Integración con sistema de facturación',
     description: 'Conectar el sistema actual con el nuevo sistema de facturación para automatizar el proceso.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 1,
     assignedTo: 9, // Patricia Jiménez (Finanzas)
     functional: 'https://docs.company.com/integracion-facturacion.pdf',
@@ -67,7 +67,7 @@ export const mockTasks: Task[] = [
     id: 5,
     subject: 'Portal de autoservicio para empleados',
     description: 'Desarrollar portal donde los empleados puedan gestionar sus datos personales, solicitar vacaciones y consultar nóminas.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 8, // Roberto Moreno (RRHH)
     functional: 'https://docs.company.com/portal-empleados.pdf',
@@ -87,7 +87,7 @@ export const mockTasks: Task[] = [
     id: 6,
     subject: 'Módulo de gestión de inventario',
     description: 'Implementar módulo para gestión completa de inventario con alertas de stock mínimo y reportes.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 10, // Fernando Ruiz (Operaciones)
     functional: 'https://docs.company.com/gestion-inventario.pdf',
@@ -105,7 +105,7 @@ export const mockTasks: Task[] = [
     id: 7,
     subject: 'Sistema de tickets de soporte',
     description: 'Desarrollar sistema completo de gestión de tickets de soporte al cliente con asignación automática.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 11, // Mónica Vázquez (Atención al Cliente)
     functional: 'https://docs.company.com/tickets-soporte.pdf',
@@ -125,7 +125,7 @@ export const mockTasks: Task[] = [
     id: 8,
     subject: 'Migración a nueva versión de framework',
     description: 'Actualizar el framework principal de la aplicación a la última versión estable.',
-    status: TaskStatus.COMPLETED,
+    status: TaskStatus.DONE,
     priority: 1,
     assignedTo: 1, // Juan Pérez (Tecnología)
     functional: 'https://docs.company.com/migracion-framework.pdf',
@@ -145,7 +145,7 @@ export const mockTasks: Task[] = [
     id: 9,
     subject: 'API de integración con redes sociales',
     description: 'Desarrollar API para integrar publicaciones automáticas en redes sociales.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.BACKLOG,
     priority: 3,
     assignedTo: 5, // Laura Rodríguez (Marketing)
     department: 2, // Marketing
@@ -157,7 +157,7 @@ export const mockTasks: Task[] = [
     id: 10,
     subject: 'Módulo de análisis de ventas',
     description: 'Crear módulo para análisis detallado de ventas con gráficos y reportes personalizables.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 7, // Sara González (Ventas)
     functional: 'https://docs.company.com/analisis-ventas.pdf',
@@ -175,7 +175,7 @@ export const mockTasks: Task[] = [
     id: 11,
     subject: 'Sistema de evaluación de desempeño',
     description: 'Implementar sistema digital para evaluaciones de desempeño de empleados.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 2,
     assignedTo: 8, // Roberto Moreno (RRHH)
     functional: 'https://docs.company.com/evaluacion-desempeno.pdf',
@@ -193,7 +193,7 @@ export const mockTasks: Task[] = [
     id: 12,
     subject: 'Automatización de reportes financieros',
     description: 'Automatizar la generación de reportes financieros mensuales y trimestrales.',
-    status: TaskStatus.COMPLETED,
+    status: TaskStatus.DONE,
     priority: 1,
     assignedTo: 9, // Patricia Jiménez (Finanzas)
     functional: 'https://docs.company.com/reportes-financieros.pdf',
@@ -216,7 +216,7 @@ export const mockTasks: Task[] = [
     id: 101,
     subject: 'Portal Cliente v2.1',
     description: 'Actualización mayor del portal de clientes con nuevas funcionalidades de autoservicio.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/portal-cliente-v2.pdf',
@@ -234,7 +234,7 @@ export const mockTasks: Task[] = [
     id: 102,
     subject: 'API Pagos Móviles',
     description: 'Desarrollo de API para integración con sistemas de pagos móviles.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 9, // Patricia Jiménez
     functional: 'https://docs.company.com/api-pagos-moviles.pdf',
@@ -254,7 +254,7 @@ export const mockTasks: Task[] = [
     id: 103,
     subject: 'Migración Base Datos',
     description: 'Migración completa de la base de datos principal a nueva infraestructura cloud.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/migracion-bd.pdf',
@@ -272,7 +272,7 @@ export const mockTasks: Task[] = [
     id: 104,
     subject: 'Dashboard Ejecutivo',
     description: 'Dashboard de métricas ejecutivas en tiempo real.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 13, // Ana Torres
     functional: 'https://docs.company.com/dashboard-ejecutivo.pdf',
@@ -292,7 +292,7 @@ export const mockTasks: Task[] = [
     id: 105,
     subject: 'App Móvil Empleados',
     description: 'Aplicación móvil para empleados con funcionalidades de autogestión.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 8, // Roberto Moreno
     functional: 'https://docs.company.com/app-movil-empleados.pdf',
@@ -312,7 +312,7 @@ export const mockTasks: Task[] = [
     id: 106,
     subject: 'Sistema Inventario',
     description: 'Sistema completo de gestión de inventario con alertas y reportes.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 10, // Fernando Ruiz
     functional: 'https://docs.company.com/sistema-inventario.pdf',
@@ -330,7 +330,7 @@ export const mockTasks: Task[] = [
     id: 107,
     subject: 'Integración CRM',
     description: 'Integración con sistema CRM externo para unificar datos de clientes.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 6, // David Hernández
     functional: 'https://docs.company.com/integracion-crm.pdf',
@@ -350,7 +350,7 @@ export const mockTasks: Task[] = [
     id: 108,
     subject: 'Prototipo IoT',
     description: 'Desarrollo de prototipo para integración con dispositivos IoT.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 2,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/prototipo-iot.pdf',
@@ -370,7 +370,7 @@ export const mockTasks: Task[] = [
     id: 109,
     subject: 'Plataforma E-learning',
     description: 'Plataforma de capacitación online para empleados.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 8, // Roberto Moreno
     functional: 'https://docs.company.com/plataforma-elearning.pdf',
@@ -388,7 +388,7 @@ export const mockTasks: Task[] = [
     id: 110,
     subject: 'Optimización Web',
     description: 'Optimización de rendimiento del sitio web corporativo.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 4, // Carlos Martínez
     functional: 'https://docs.company.com/optimizacion-web.pdf',
@@ -408,7 +408,7 @@ export const mockTasks: Task[] = [
     id: 111,
     subject: 'Sistema Facturación',
     description: 'Nuevo sistema de facturación electrónica integrado.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 9, // Patricia Jiménez
     functional: 'https://docs.company.com/sistema-facturacion.pdf',
@@ -428,7 +428,7 @@ export const mockTasks: Task[] = [
     id: 112,
     subject: 'Marketplace B2B',
     description: 'Plataforma de marketplace para transacciones B2B.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 7, // Sara González
     functional: 'https://docs.company.com/marketplace-b2b.pdf',
@@ -446,7 +446,7 @@ export const mockTasks: Task[] = [
     id: 113,
     subject: 'API Analytics',
     description: 'API para análisis de datos y métricas de marketing.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 2,
     assignedTo: 5, // Laura Rodríguez
     functional: 'https://docs.company.com/api-analytics.pdf',
@@ -466,7 +466,7 @@ export const mockTasks: Task[] = [
     id: 114,
     subject: 'Portal Proveedores',
     description: 'Portal web para gestión de proveedores y licitaciones.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 10, // Fernando Ruiz
     functional: 'https://docs.company.com/portal-proveedores.pdf',
@@ -486,7 +486,7 @@ export const mockTasks: Task[] = [
     id: 115,
     subject: 'Sistema Reservas',
     description: 'Sistema de reservas para salas y recursos corporativos.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 10, // Fernando Ruiz
     functional: 'https://docs.company.com/sistema-reservas.pdf',
@@ -504,7 +504,7 @@ export const mockTasks: Task[] = [
     id: 116,
     subject: 'Chat Bot IA',
     description: 'Chatbot con inteligencia artificial para atención al cliente.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 11, // Mónica Vázquez
     functional: 'https://docs.company.com/chatbot-ia.pdf',
@@ -526,7 +526,7 @@ export const mockTasks: Task[] = [
     id: 117,
     subject: 'Desarrollo Frontend',
     description: 'Desarrollo de interfaces de usuario modernas con React.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/desarrollo-frontend.pdf',
@@ -544,7 +544,7 @@ export const mockTasks: Task[] = [
     id: 118,
     subject: 'Testing Automatizado',
     description: 'Implementación de suite de testing automatizado completa.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/testing-automatizado.pdf',
@@ -564,7 +564,7 @@ export const mockTasks: Task[] = [
     id: 119,
     subject: 'Migración Cloud',
     description: 'Migración completa de infraestructura a servicios cloud.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/migracion-cloud.pdf',
@@ -584,7 +584,7 @@ export const mockTasks: Task[] = [
     id: 120,
     subject: 'ERP Customización',
     description: 'Customización del sistema ERP para procesos específicos.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 9, // Patricia Jiménez
     functional: 'https://docs.company.com/erp-customizacion.pdf',
@@ -602,7 +602,7 @@ export const mockTasks: Task[] = [
     id: 121,
     subject: 'Seguridad Audit',
     description: 'Auditoría completa de seguridad y implementación de mejoras.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/seguridad-audit.pdf',
@@ -622,7 +622,7 @@ export const mockTasks: Task[] = [
     id: 122,
     subject: 'UX/UI Redesign',
     description: 'Rediseño completo de experiencia de usuario.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 4, // Carlos Martínez
     functional: 'https://docs.company.com/ux-ui-redesign.pdf',
@@ -641,7 +641,7 @@ export const mockTasks: Task[] = [
     id: 123,
     subject: 'Data Warehouse',
     description: 'Implementación de almacén de datos corporativo.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/data-warehouse.pdf',
@@ -660,7 +660,7 @@ export const mockTasks: Task[] = [
     id: 124,
     subject: 'API Gateway',
     description: 'Implementación de gateway para gestión centralizada de APIs.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/api-gateway.pdf',
@@ -678,7 +678,7 @@ export const mockTasks: Task[] = [
     id: 125,
     subject: 'Microservicios',
     description: 'Migración a arquitectura de microservicios.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/microservicios.pdf',
@@ -697,7 +697,7 @@ export const mockTasks: Task[] = [
     id: 126,
     subject: 'Blockchain POC',
     description: 'Prueba de concepto con tecnología blockchain.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 2,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/blockchain-poc.pdf',
@@ -716,7 +716,7 @@ export const mockTasks: Task[] = [
     id: 127,
     subject: 'DevOps Pipeline',
     description: 'Implementación de pipeline de integración y despliegue continuo.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/devops-pipeline.pdf',
@@ -734,7 +734,7 @@ export const mockTasks: Task[] = [
     id: 128,
     subject: 'Monitoring Setup',
     description: 'Configuración de sistema de monitoreo y alertas.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/monitoring-setup.pdf',
@@ -753,7 +753,7 @@ export const mockTasks: Task[] = [
     id: 129,
     subject: 'Machine Learning',
     description: 'Implementación de modelos de machine learning para análisis predictivo.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/machine-learning.pdf',
@@ -772,7 +772,7 @@ export const mockTasks: Task[] = [
     id: 130,
     subject: 'Legacy Modernization',
     description: 'Modernización de sistemas legacy críticos.',
-    status: TaskStatus.IN_PROGRESS,
+    status: TaskStatus.DOING,
     priority: 1,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/legacy-modernization.pdf',
@@ -790,7 +790,7 @@ export const mockTasks: Task[] = [
     id: 131,
     subject: 'Performance Tuning',
     description: 'Optimización de rendimiento de aplicaciones críticas.',
-    status: TaskStatus.PENDING,
+    status: TaskStatus.TODO,
     priority: 2,
     assignedTo: 1, // Juan Pérez
     functional: 'https://docs.company.com/performance-tuning.pdf',
@@ -806,31 +806,29 @@ export const mockTasks: Task[] = [
   }
 ];
 
-// Función para obtener el stage de una tarea basado en su estado y datos
-export const getTaskStage = (task: Task): TaskStage => {
-  if (task.status === TaskStatus.COMPLETED) {
-    return TaskStage.COMPLETED;
+export const getTaskStage = (task: Task): TaskStatus => {
+  if (task.status === TaskStatus.DONE) {
+    return TaskStatus.DONE;
   }
   
-  if (task.status === TaskStatus.IN_PROGRESS) {
-    return TaskStage.IN_PROGRESS;
+  if (task.status === TaskStatus.DOING || task.status === TaskStatus.DEMO) {
+    return task.status;
   }
   
-  if (task.team && task.startDate && task.endDate) {
-    return TaskStage.PLANNED;
+  if (task.team && task.startDate && task.endDate && task.sprints) {
+    return TaskStatus.TODO;
   }
   
-  if (task.assignedTo && task.functional && task.sprints) {
-    return TaskStage.PENDING_PLANNING;
+  if (task.sprints && task.functional) {
+    return TaskStatus.TODO;
   }
   
-  return TaskStage.BACKLOG;
+  return TaskStatus.BACKLOG;
 };
 
-// Función para obtener tareas con su stage calculado
-export const getTasksWithStage = (): (Task & { stage: TaskStage })[] => {
+export const getTasksWithStage = (): Task[] => {
   return mockTasks.map(task => ({
     ...task,
-    stage: getTaskStage(task)
+    status: task.status || getTaskStage(task)
   }));
 }; 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Form, Row, Col } from 'react-bootstrap';
-import { TaskFilters, TaskStage, UserRole } from '../../types';
+import { TaskFilters, TaskStatus, UserRole } from '../../types';
 import { mockDepartments } from '../../services/mockData/departments';
 import { mockTeams } from '../../services/mockData/teams';
 import { mockUsers } from '../../services/mockData/users';
@@ -72,15 +72,15 @@ const TaskFiltersComponent: React.FC<TaskFiltersProps> = ({
           <Form.Group className="mb-3">
             <Form.Label>Estado</Form.Label>
             <Form.Select
-              value={filters.stage || ''}
-              onChange={(e) => handleFilterChange('stage', e.target.value || undefined)}
+              value={filters.status || ''}
+              onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
             >
               <option value="">Todos los estados</option>
-              <option value={TaskStage.BACKLOG}>Backlog</option>
-              <option value={TaskStage.PENDING_PLANNING}>Pendiente Planificación</option>
-              <option value={TaskStage.PLANNED}>Planificada</option>
-              <option value={TaskStage.IN_PROGRESS}>En Progreso</option>
-              <option value={TaskStage.COMPLETED}>Completada</option>
+              <option value={TaskStatus.BACKLOG}>Backlog</option>
+              <option value={TaskStatus.TODO}>To Do</option>
+              <option value={TaskStatus.DOING}>Doing</option>
+              <option value={TaskStatus.DEMO}>Demo</option>
+              <option value={TaskStatus.DONE}>Done</option>
             </Form.Select>
           </Form.Group>
         </Col>

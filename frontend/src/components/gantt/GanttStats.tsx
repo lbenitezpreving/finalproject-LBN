@@ -8,7 +8,7 @@ import {
   faBuilding 
 } from '@fortawesome/free-solid-svg-icons';
 import { GanttFilters, GanttService } from '../../services/ganttService';
-import { TaskStage } from '../../types';
+import { TaskStatus } from '../../types';
 
 interface GanttStatsProps {
   filters: GanttFilters;
@@ -17,7 +17,7 @@ interface GanttStatsProps {
 
 interface StatsData {
   totalTasks: number;
-  tasksByStage: Record<TaskStage, number>;
+  tasksByStatus: Record<TaskStatus, number>;
   tasksByTeam: Record<string, number>;
   tasksByDepartment: Record<string, number>;
   timeRange: { start: Date; end: Date } | null;
@@ -60,27 +60,35 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
     return `${startStr} - ${endStr}`;
   };
 
-  const getStageLabel = (stage: TaskStage): string => {
-    switch (stage) {
-      case TaskStage.PLANNED:
-        return 'Planificadas';
-      case TaskStage.IN_PROGRESS:
+  const getStatusLabel = (status: TaskStatus): string => {
+    switch (status) {
+      case TaskStatus.BACKLOG:
+        return 'Backlog';
+      case TaskStatus.TODO:
+        return 'To Do';
+      case TaskStatus.DOING:
         return 'En Progreso';
-      case TaskStage.COMPLETED:
+      case TaskStatus.DEMO:
+        return 'Demo';
+      case TaskStatus.DONE:
         return 'Completadas';
       default:
-        return stage;
+        return status;
     }
   };
 
-  const getStageColor = (stage: TaskStage): string => {
-    switch (stage) {
-      case TaskStage.PLANNED:
-        return 'primary';
-      case TaskStage.IN_PROGRESS:
-        return 'success';
-      case TaskStage.COMPLETED:
+  const getStatusColor = (status: TaskStatus): string => {
+    switch (status) {
+      case TaskStatus.BACKLOG:
         return 'secondary';
+      case TaskStatus.TODO:
+        return 'warning';
+      case TaskStatus.DOING:
+        return 'primary';
+      case TaskStatus.DEMO:
+        return 'info';
+      case TaskStatus.DONE:
+        return 'success';
       default:
         return 'light';
     }
@@ -196,20 +204,19 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
             <h6 className="mb-0">Distribución por Estado</h6>
           </Card.Header>
           <Card.Body>
-            {Object.entries(stats.tasksByStage).map(([stage, count]) => {
+            {Object.entries(stats.tasksByStatus).map(([status, count]) => {
               if (count === 0) return null;
-              
-              const percentage = stats.totalTasks > 0 ? (count / stats.totalTasks * 100).toFixed(1) : '0';
-              
+              const statusEnum = status as TaskStatus;
               return (
-                <div key={stage} className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="small">
-                    <span className={`badge bg-${getStageColor(stage as TaskStage)} me-2`}>
-                      {count}
-                    </span>
-                    {getStageLabel(stage as TaskStage)}
-                  </span>
-                  <span className="small text-muted">{percentage}%</span>
+                <div key={status} className="d-flex justify-content-between align-items-center mb-2">
+                  <div className="d-flex align-items-center">
+                    <div 
+                      className={`bg-${getStatusColor(statusEnum)} rounded me-2`}
+                      style={{ width: '12px', height: '12px' }}
+                    ></div>
+                    <span className="small">{getStatusLabel(statusEnum)}</span>
+                  </div>
+                  <span className="fw-bold">{count}</span>
                 </div>
               );
             })}
@@ -221,21 +228,23 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
       <Col lg={4} className="mb-3">
         <Card className="h-100">
           <Card.Header>
-            <h6 className="mb-0">Equipos Más Activos</h6>
+            <h6 className="mb-0">Top Equipos</h6>
           </Card.Header>
           <Card.Body>
             {topTeams.length > 0 ? (
               topTeams.map(([team, count], index) => (
                 <div key={team} className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="small">
-                    <span className="badge bg-primary me-2">{index + 1}</span>
-                    {team}
-                  </span>
-                  <span className="small text-muted">{count} tareas</span>
+                  <div className="d-flex align-items-center">
+                    <span className={`badge bg-${index === 0 ? 'primary' : index === 1 ? 'secondary' : 'light'} me-2`}>
+                      {index + 1}
+                    </span>
+                    <span className="small">{team}</span>
+                  </div>
+                  <span className="fw-bold">{count}</span>
                 </div>
               ))
             ) : (
-              <p className="text-muted small mb-0">Sin datos de equipos</p>
+              <p className="text-muted small mb-0">No hay datos disponibles</p>
             )}
           </Card.Body>
         </Card>
@@ -245,21 +254,23 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
       <Col lg={4} className="mb-3">
         <Card className="h-100">
           <Card.Header>
-            <h6 className="mb-0">Departamentos Más Activos</h6>
+            <h6 className="mb-0">Top Departamentos</h6>
           </Card.Header>
           <Card.Body>
             {topDepartments.length > 0 ? (
               topDepartments.map(([department, count], index) => (
                 <div key={department} className="d-flex justify-content-between align-items-center mb-2">
-                  <span className="small">
-                    <span className="badge bg-info me-2">{index + 1}</span>
-                    {department}
-                  </span>
-                  <span className="small text-muted">{count} tareas</span>
+                  <div className="d-flex align-items-center">
+                    <span className={`badge bg-${index === 0 ? 'primary' : index === 1 ? 'secondary' : 'light'} me-2`}>
+                      {index + 1}
+                    </span>
+                    <span className="small">{department}</span>
+                  </div>
+                  <span className="fw-bold">{count}</span>
                 </div>
               ))
             ) : (
-              <p className="text-muted small mb-0">Sin datos de departamentos</p>
+              <p className="text-muted small mb-0">No hay datos disponibles</p>
             )}
           </Card.Body>
         </Card>

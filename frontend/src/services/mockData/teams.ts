@@ -6,14 +6,14 @@ import { Team } from '../../types';
 const calculateTeamCurrentLoad = (teamId: number): number => {
   // Importación lazy para evitar dependencias circulares
   const { getTasksWithStage } = require('./tasks');
-  const { TaskStage } = require('../../types');
+  const { TaskStatus } = require('../../types');
   
   const tasksWithStage = getTasksWithStage();
   
   // Filtrar tareas que están asignadas al equipo y en progreso o planificadas
   const activeTasks = tasksWithStage.filter((task: any) => 
     task.team === teamId && 
-    (task.stage === TaskStage.PLANNED || task.stage === TaskStage.IN_PROGRESS) &&
+    (task.status === TaskStatus.TODO || task.status === TaskStatus.DOING) &&
     task.loadFactor
   );
 

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { TaskFilters, TaskStage } from '../types';
+import { TaskFilters, TaskStatus } from '../types';
 
 export const useUrlParams = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -12,9 +12,9 @@ export const useUrlParams = () => {
     const department = searchParams.get('department');
     if (department) filters.department = parseInt(department);
 
-    const stage = searchParams.get('stage');
-    if (stage && Object.values(TaskStage).includes(stage as TaskStage)) {
-      filters.stage = stage as TaskStage;
+    const status = searchParams.get('status');
+    if (status && Object.values(TaskStatus).includes(status as TaskStatus)) {
+      filters.status = status as TaskStatus;
     }
 
     const team = searchParams.get('team');
@@ -52,7 +52,7 @@ export const useUrlParams = () => {
     const newParams = new URLSearchParams();
 
     if (filters.department) newParams.set('department', filters.department.toString());
-    if (filters.stage) newParams.set('stage', filters.stage);
+    if (filters.status) newParams.set('status', filters.status);
     if (filters.team) newParams.set('team', filters.team.toString());
     if (filters.priority) newParams.set('priority', filters.priority.toString());
     if (filters.assignedTo) newParams.set('assignedTo', filters.assignedTo.toString());
@@ -74,7 +74,7 @@ export const useUrlParams = () => {
   const getActiveFiltersCount = useCallback((filters: TaskFilters): number => {
     let count = 0;
     if (filters.department) count++;
-    if (filters.stage) count++;
+    if (filters.status) count++;
     if (filters.team) count++;
     if (filters.priority) count++;
     if (filters.assignedTo) count++;

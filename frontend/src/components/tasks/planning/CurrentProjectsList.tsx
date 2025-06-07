@@ -30,11 +30,11 @@ const CurrentProjectsList: React.FC<CurrentProjectsListProps> = ({ projects, tea
 
   const getStatusBadge = (status: CurrentProject['status']) => {
     switch (status) {
-      case 'in_progress':
+      case 'doing':
         return <Badge bg="primary" className="status-badge">En Progreso</Badge>;
-      case 'finishing_soon':
-        return <Badge bg="warning" text="dark" className="status-badge">Finalizando</Badge>;
-      case 'starting_soon':
+      case 'demo':
+        return <Badge bg="warning" text="dark" className="status-badge">En Demo</Badge>;
+      case 'todo':
         return <Badge bg="info" className="status-badge">Por Iniciar</Badge>;
       default:
         return <Badge bg="secondary" className="status-badge">Unknown</Badge>;
@@ -43,11 +43,11 @@ const CurrentProjectsList: React.FC<CurrentProjectsListProps> = ({ projects, tea
 
   const getStatusClass = (status: CurrentProject['status']): string => {
     switch (status) {
-      case 'in_progress':
+      case 'doing':
         return 'project-in-progress';
-      case 'finishing_soon':
+      case 'demo':
         return 'project-finishing-soon';
-      case 'starting_soon':
+      case 'todo':
         return 'project-starting-soon';
       default:
         return '';

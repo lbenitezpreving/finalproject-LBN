@@ -10,7 +10,7 @@ import {
   faClock,
   faCalculator
 } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStage, TeamRecommendation } from '../../../types';
+import { Task, TaskStatus, TeamRecommendation } from '../../../types';
 
 interface ConflictInfo {
   hasConflicts: boolean;
@@ -19,19 +19,21 @@ interface ConflictInfo {
 }
 
 interface PlanningFormProps {
-  task: Task & { stage: TaskStage };
   recommendation: TeamRecommendation;
-  conflicts: ConflictInfo | null;
-  onDateChange: (startDate: Date, endDate: Date) => void;
-  onSave: (teamId: number, startDate: Date, endDate: Date) => Promise<void>;
+  task: Task;
+  onSave: (teamId: number, startDate: Date, endDate: Date) => void;
+  onBack: () => void;
+  conflicts?: ConflictInfo | null;
+  onDateChange?: (startDate: Date, endDate: Date) => void;
 }
 
 const PlanningForm: React.FC<PlanningFormProps> = ({
-  task,
   recommendation,
+  task,
+  onSave,
+  onBack,
   conflicts,
-  onDateChange,
-  onSave
+  onDateChange
 }) => {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -48,7 +50,7 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
     
     // Trigger conflict check with initial dates
     if (startDateStr && endDateStr) {
-      onDateChange(
+      onDateChange?.(
         new Date(recommendation.possibleStartDate),
         new Date(recommendation.possibleEndDate)
       );
@@ -68,7 +70,7 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
       const end = new Date(endDate);
       
       if (start < end) {
-        onDateChange(start, end);
+        onDateChange?.(start, end);
       }
     }
   };
@@ -82,7 +84,7 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
       const end = new Date(value);
       
       if (start < end) {
-        onDateChange(start, end);
+        onDateChange?.(start, end);
       }
     }
   };

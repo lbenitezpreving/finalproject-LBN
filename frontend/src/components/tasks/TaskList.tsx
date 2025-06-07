@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, Alert, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { Task, TaskStage, TaskFilters, PaginationInfo, SortConfig } from '../../types';
+import { Task, TaskStatus, TaskFilters, PaginationInfo, SortConfig } from '../../types';
 import { TaskService } from '../../services/taskService';
 import { useAuth } from '../../context/AuthContext';
 import { useUrlParams } from '../../hooks/useUrlParams';
@@ -9,6 +9,7 @@ import TaskFilterPanel from './TaskFilterPanel';
 import TaskTable from './TaskTable';
 import TaskEstimationModal from './estimation/TaskEstimationModal';
 import './TaskList.css';
+import TaskFiltersComponent from './TaskFilters';
 
 const TaskList: React.FC = () => {
   const { user } = useAuth();
@@ -16,15 +17,10 @@ const TaskList: React.FC = () => {
   const { getFiltersFromUrl, updateUrlFromFilters, clearFilters, getActiveFiltersCount } = useUrlParams();
   
   // Estados principales
-  const [tasks, setTasks] = useState<(Task & { stage: TaskStage })[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | undefined>(undefined);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    currentPage: 1,
-    pageSize: 10,
-    totalItems: 0,
-    totalPages: 0
-  });
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   
   // Estados de filtros y ordenamiento
   const [filters, setFilters] = useState<TaskFilters>({});
@@ -32,7 +28,7 @@ const TaskList: React.FC = () => {
   
   // Estados del modal de estimación
   const [showEstimationModal, setShowEstimationModal] = useState(false);
-  const [selectedTaskForEstimation, setSelectedTaskForEstimation] = useState<(Task & { stage: TaskStage }) | null>(null);
+  const [selectedTaskForEstimation, setSelectedTaskForEstimation] = useState<Task | null>(null);
   
   // Cargar filtros desde URL al montar el componente
   useEffect(() => {
@@ -41,33 +37,29 @@ const TaskList: React.FC = () => {
   }, [getFiltersFromUrl]);
   
   // Función para cargar tareas
-  const loadTasks = useCallback(async (
-    currentFilters: TaskFilters = filters,
-    currentPagination: { page: number; pageSize: number } = { page: pagination.currentPage, pageSize: pagination.pageSize },
-    currentSort: SortConfig = sort
-  ) => {
+  const loadTasks = async () => {
     try {
       setLoading(true);
-      setError(undefined);
-      
-      const response = await TaskService.getTasks(
-        currentFilters,
-        currentPagination,
-        undefined, // search params - se implementará en US-08-03
-        currentSort,
+      setError(null);
+
+      const result = await TaskService.getTasks(
+        filters,
+        { page: 1, pageSize: 20 },
+        undefined, // search
+        sort,
         user?.role,
         user?.department
       );
-      
-      setTasks(response.data);
-      setPagination(response.pagination);
+
+      setTasks(result.data);
+      setPagination(result.pagination);
     } catch (err) {
-      setError('Error al cargar las tareas. Por favor, inténtelo de nuevo.');
       console.error('Error loading tasks:', err);
+      setError(err instanceof Error ? err.message : 'Error al cargar las tareas');
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.currentPage, pagination.pageSize, sort, user?.role, user?.department]);
+  };
   
   // Cargar tareas cuando cambien los filtros, paginación o ordenamiento
   useEffect(() => {
@@ -75,13 +67,13 @@ const TaskList: React.FC = () => {
   }, [loadTasks]);
   
   // Manejar click en tarea para estimación
-  const handleEstimateTask = useCallback((task: Task & { stage: TaskStage }) => {
+  const handleEstimateTask = useCallback((task: Task) => {
     setSelectedTaskForEstimation(task);
     setShowEstimationModal(true);
   }, []);
 
   // Manejar click en tarea para planificación
-  const handlePlanTask = useCallback((task: Task & { stage: TaskStage }) => {
+  const handlePlanTask = useCallback((task: Task) => {
     navigate(`/tasks/${task.id}/plan`);
   }, [navigate]);
 
@@ -89,17 +81,12 @@ const TaskList: React.FC = () => {
   const handleSaveEstimation = useCallback(async (taskId: number, sprints: number, loadFactor: number) => {
     try {
       await TaskService.updateTaskEstimation(taskId, sprints, loadFactor);
-      
-      // Recargar las tareas para mostrar los cambios
-      await loadTasks();
-      
-      // Mostrar mensaje de éxito
-      setError(undefined);
-    } catch (err) {
-      console.error('Error updating task estimation:', err);
-      throw err; // Re-lanzar para que el modal lo maneje
+      // Recargar tareas para ver los cambios
+      loadTasks();
+    } catch (error) {
+      throw error; // Re-lanzar para que el modal pueda manejar el error
     }
-  }, [loadTasks]);
+  }, []);
 
   // Cerrar modal de estimación
   const handleCloseEstimationModal = useCallback(() => {
@@ -112,7 +99,12 @@ const TaskList: React.FC = () => {
     setFilters(newFilters);
     updateUrlFromFilters(newFilters);
     // Resetear a la primera página cuando cambien los filtros
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setPagination(prev => prev ? { 
+      currentPage: 1, 
+      pageSize: prev.pageSize, 
+      totalItems: prev.totalItems, 
+      totalPages: prev.totalPages 
+    } : null);
   }, [updateUrlFromFilters]);
   
   // Manejar limpieza de filtros
@@ -120,25 +112,35 @@ const TaskList: React.FC = () => {
     const emptyFilters: TaskFilters = {};
     setFilters(emptyFilters);
     clearFilters();
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setPagination(prev => prev ? { 
+      currentPage: 1, 
+      pageSize: prev.pageSize, 
+      totalItems: prev.totalItems, 
+      totalPages: prev.totalPages 
+    } : null);
   }, [clearFilters]);
   
   // Manejar cambio de página
   const handlePageChange = useCallback((page: number) => {
-    setPagination(prev => ({ ...prev, currentPage: page }));
+    setPagination(prev => prev ? { 
+      currentPage: page, 
+      pageSize: prev.pageSize, 
+      totalItems: prev.totalItems, 
+      totalPages: prev.totalPages 
+    } : null);
   }, []);
   
   // Manejar cambio de ordenamiento
   const handleSortChange = useCallback((field: string) => {
-    setSort(prevSort => ({
+    setSort(prev => ({
       field,
-      direction: prevSort.field === field && prevSort.direction === 'asc' ? 'desc' : 'asc'
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
     }));
   }, []);
   
   // Manejar click en tarea (para futuras funcionalidades)
-  const handleTaskClick = useCallback((task: Task & { stage: TaskStage }) => {
-    console.log('Task clicked:', task);
+  const handleTaskClick = useCallback((task: Task) => {
+    console.log('Task clicked:', task.id);
     // Aquí se puede implementar navegación a detalle de tarea
   }, []);
   
@@ -147,10 +149,10 @@ const TaskList: React.FC = () => {
   
   // Calcular estadísticas para mostrar
   const getFilteredStats = () => {
-    const total = pagination.totalItems;
+    const total = pagination?.totalItems || 0;
     const showing = tasks.length;
-    const page = pagination.currentPage;
-    const pageSize = pagination.pageSize;
+    const page = pagination?.currentPage || 1;
+    const pageSize = pagination?.pageSize || 10;
     const startItem = (page - 1) * pageSize + 1;
     const endItem = Math.min(page * pageSize, total);
     
@@ -165,6 +167,20 @@ const TaskList: React.FC = () => {
   
   const stats = getFilteredStats();
   
+  // Filtros adaptados al rol del usuario
+  const adaptedFilters = useMemo(() => {
+    if (!user) return filters;
+    
+    const adapted = { ...filters };
+    
+    // Si es usuario de negocio, filtrar por su departamento
+    if (user.role === 'NEGOCIO' && user.department) {
+      adapted.department = user.department;
+    }
+    
+    return adapted;
+  }, [filters, user]);
+  
   if (error) {
     return (
       <Alert variant="danger">
@@ -178,7 +194,7 @@ const TaskList: React.FC = () => {
     <div className="task-list">
       {/* Panel de filtros expandible */}
       <TaskFilterPanel
-        filters={filters}
+        filters={adaptedFilters}
         onFiltersChange={handleFiltersChange}
         onClearFilters={handleClearFilters}
         activeFiltersCount={activeFiltersCount}
@@ -214,8 +230,8 @@ const TaskList: React.FC = () => {
           <TaskTable
             tasks={tasks}
             loading={loading}
-            error={error}
-            pagination={pagination}
+            error={error || undefined}
+            pagination={pagination || undefined}
             sort={sort}
             onTaskClick={handleTaskClick}
             onPageChange={handlePageChange}

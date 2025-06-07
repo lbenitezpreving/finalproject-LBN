@@ -3,7 +3,9 @@ import { Card, Form, Button, Spinner, Badge } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilter, faUndo } from '@fortawesome/free-solid-svg-icons';
 import { GanttFilters, GanttService } from '../../services/ganttService';
-import { Department, Team, TaskStage } from '../../types';
+import { Department, Team, TaskStatus } from '../../types';
+import { mockDepartments } from '../../services/mockData/departments';
+import { mockTeams } from '../../services/mockData/teams';
 
 interface GanttFiltersProps {
   filters: GanttFilters;
@@ -17,9 +19,9 @@ const GanttFiltersComponent: React.FC<GanttFiltersProps> = ({
   loading = false
 }) => {
   // Estados locales para las opciones de filtros
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [statuses, setStatuses] = useState<{ value: TaskStage; label: string }[]>([]);
+  const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+  const [teams, setTeams] = useState<Team[]>(mockTeams);
+  const [statuses, setStatuses] = useState<{ value: TaskStatus; label: string }[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   // Estados para el formulario
@@ -57,7 +59,7 @@ const GanttFiltersComponent: React.FC<GanttFiltersProps> = ({
     const newFilters: GanttFilters = {
       departments: selectedDepartments.length > 0 ? selectedDepartments : undefined,
       teams: selectedTeams.length > 0 ? selectedTeams : undefined,
-      status: selectedStatuses.length > 0 ? selectedStatuses : undefined,
+      status: selectedStatuses.length > 0 ? selectedStatuses as TaskStatus[] : undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined
     };

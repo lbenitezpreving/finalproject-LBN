@@ -1,8 +1,9 @@
-import { Task, TaskStage, Department, Team } from '../types';
+import { Task, TaskStatus, Department, Team } from '../types';
 import { TaskService } from './taskService';
 import { getTasksWithStage } from './mockData/tasks';
 import { getAllTeamsWithCurrentLoad } from './mockData/teams';
 import { mockDepartments } from './mockData/departments';
+import { mockTeams } from './mockData/teams';
 
 // Interfaz para representar una tarea en el Gantt
 export interface GanttTask {
@@ -27,7 +28,7 @@ export interface GanttFilters {
   teams?: number[];
   startDate?: Date;
   endDate?: Date;
-  status?: string[];
+  status?: TaskStatus[];
 }
 
 // Función para convertir Date a string formato YYYY-MM-DD
@@ -36,45 +37,53 @@ const formatDateForGantt = (date: Date): string => {
 };
 
 // Función para obtener el color/clase CSS según el estado de la tarea
-const getTaskClass = (task: Task & { stage: TaskStage }): string => {
-  switch (task.stage) {
-    case TaskStage.PLANNED:
-      return 'gantt-planned';
-    case TaskStage.IN_PROGRESS:
-      return 'gantt-in-progress';
-    case TaskStage.COMPLETED:
-      return 'gantt-completed';
+const getTaskClass = (task: Task): string => {
+  switch (task.status) {
+    case TaskStatus.TODO:
+      return 'gantt-task-planned';
+    case TaskStatus.DOING:
+      return 'gantt-task-progress';
+    case TaskStatus.DEMO:
+    case TaskStatus.DONE:
+      return 'gantt-task-completed';
     default:
-      return 'gantt-default';
+      return 'gantt-task-backlog';
   }
 };
 
 // Función para calcular el progreso de una tarea
-const calculateProgress = (task: Task & { stage: TaskStage }): number => {
+const calculateProgress = (task: Task): number => {
+  if (!task.startDate || !task.endDate) {
+    return 0;
+  }
+
   const now = new Date();
+  const start = new Date(task.startDate);
+  const end = new Date(task.endDate);
   
-  if (!task.startDate || !task.endDate) return 0;
+  // Si no ha empezado
+  if (now < start) {
+    return 0;
+  }
   
-  const startTime = task.startDate.getTime();
-  const endTime = task.endDate.getTime();
-  const currentTime = now.getTime();
-  
-  if (currentTime < startTime) return 0; // No ha comenzado
-  if (currentTime > endTime) return 100; // Ya terminó
-  
-  // Calcular progreso basado en tiempo transcurrido
-  const totalDuration = endTime - startTime;
-  const elapsedDuration = currentTime - startTime;
-  const timeProgress = (elapsedDuration / totalDuration) * 100;
-  
-  // Ajustar según el estado de la tarea
-  switch (task.stage) {
-    case TaskStage.COMPLETED:
+  // Si ya terminó
+  if (now > end) {
+    return 100;
+  }
+
+  // Calcular progreso basado en estado
+  switch (task.status) {
+    case TaskStatus.DONE:
       return 100;
-    case TaskStage.IN_PROGRESS:
-      return Math.min(Math.max(timeProgress, 10), 95); // Entre 10% y 95%
-    case TaskStage.PLANNED:
-      return Math.min(timeProgress, 5); // Máximo 5% si está planificada
+    case TaskStatus.DEMO:
+      return 90;
+    case TaskStatus.DOING:
+      // Calcular basado en tiempo transcurrido
+      const totalTime = end.getTime() - start.getTime();
+      const elapsed = now.getTime() - start.getTime();
+      return Math.min(Math.round((elapsed / totalTime) * 100), 80); // Máximo 80% si está en progreso
+    case TaskStatus.TODO:
+      return 10; // Ha empezado pero no está en desarrollo activo
     default:
       return 0;
   }
@@ -106,9 +115,10 @@ export class GanttService {
     let filteredTasks = allTasks.filter(task => 
       task.startDate && 
       task.endDate && 
-      (task.stage === TaskStage.PLANNED || 
-       task.stage === TaskStage.IN_PROGRESS || 
-       task.stage === TaskStage.COMPLETED)
+      (task.status === TaskStatus.TODO || 
+       task.status === TaskStatus.DOING || 
+       task.status === TaskStatus.DEMO ||
+       task.status === TaskStatus.DONE)
     );
     
     // Aplicar filtros si se proporcionan
@@ -139,7 +149,7 @@ export class GanttService {
       
       if (filters.status && filters.status.length > 0) {
         filteredTasks = filteredTasks.filter(task => 
-          filters.status!.includes(task.stage)
+          filters.status!.includes(task.status)
         );
       }
     }
@@ -169,7 +179,7 @@ export class GanttService {
    */
   static async getGanttStats(filters?: GanttFilters): Promise<{
     totalTasks: number;
-    tasksByStage: Record<TaskStage, number>;
+    tasksByStatus: Record<TaskStatus, number>;
     tasksByTeam: Record<string, number>;
     tasksByDepartment: Record<string, number>;
     timeRange: { start: Date; end: Date } | null;
@@ -179,15 +189,15 @@ export class GanttService {
     // Estadísticas básicas
     const stats = {
       totalTasks: tasks.length,
-      tasksByStage: {} as Record<TaskStage, number>,
+      tasksByStatus: {} as Record<TaskStatus, number>,
       tasksByTeam: {} as Record<string, number>,
       tasksByDepartment: {} as Record<string, number>,
       timeRange: null as { start: Date; end: Date } | null
     };
     
     // Inicializar contadores
-    Object.values(TaskStage).forEach(stage => {
-      stats.tasksByStage[stage] = 0;
+    Object.values(TaskStatus).forEach(status => {
+      stats.tasksByStatus[status] = 0;
     });
     
     if (tasks.length > 0) {
@@ -225,14 +235,15 @@ export class GanttService {
   static async getFilterOptions(): Promise<{
     departments: Department[];
     teams: Team[];
-    statuses: { value: TaskStage; label: string }[];
+    statuses: { value: TaskStatus; label: string }[];
   }> {
     const teams = getAllTeamsWithCurrentLoad();
     
     const statuses = [
-      { value: TaskStage.PLANNED, label: 'Planificada' },
-      { value: TaskStage.IN_PROGRESS, label: 'En Progreso' },
-      { value: TaskStage.COMPLETED, label: 'Completada' }
+      { value: TaskStatus.TODO, label: 'Planificada' },
+      { value: TaskStatus.DOING, label: 'En Progreso' },
+      { value: TaskStatus.DEMO, label: 'En Demo' },
+      { value: TaskStatus.DONE, label: 'Completada' }
     ];
     
     return {

@@ -1,29 +1,28 @@
 import React from 'react';
-import { Table, Pagination, Alert, Spinner, Button } from 'react-bootstrap';
+import { Table, Button, Spinner, Alert, Pagination } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSort, 
   faSortUp, 
-  faSortDown,
-  faCalculator,
-  faCalendarPlus
+  faSortDown, 
+  faCalculator, 
+  faCalendarPlus 
 } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStage, PaginationInfo, SortConfig } from '../../types';
+import { Task, TaskStatus, UserRole, PaginationInfo, SortConfig } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { UserRole } from '../../types';
 import TaskItem from './TaskItem';
 
 interface TaskTableProps {
-  tasks: (Task & { stage: TaskStage })[];
+  tasks: Task[];
   loading?: boolean;
   error?: string;
   pagination?: PaginationInfo;
   sort?: SortConfig;
-  onTaskClick?: (task: Task & { stage: TaskStage }) => void;
+  onTaskClick?: (task: Task) => void;
   onPageChange?: (page: number) => void;
   onSortChange?: (field: string) => void;
-  onEstimateTask?: (task: Task & { stage: TaskStage }) => void;
-  onPlanTask?: (task: Task & { stage: TaskStage }) => void;
+  onEstimateTask?: (task: Task) => void;
+  onPlanTask?: (task: Task) => void;
 }
 
 const TaskTable: React.FC<TaskTableProps> = ({
@@ -38,12 +37,11 @@ const TaskTable: React.FC<TaskTableProps> = ({
   onEstimateTask,
   onPlanTask
 }) => {
+  
   const { user } = useAuth();
-
+  
   const getSortIcon = (field: string) => {
-    if (!sort || sort.field !== field) {
-      return faSort;
-    }
+    if (!sort || sort.field !== field) return faSort;
     return sort.direction === 'asc' ? faSortUp : faSortDown;
   };
   
@@ -53,18 +51,40 @@ const TaskTable: React.FC<TaskTableProps> = ({
     }
   };
 
-  const canEstimate = (task: Task & { stage: TaskStage }): boolean => {
-    return user?.role === UserRole.TECNOLOGIA && task.stage === TaskStage.PENDING_PLANNING;
+  // Condiciones para habilitar botones según los nuevos estados
+  const canEstimate = (task: Task): boolean => {
+    // Se puede estimar cuando está en Backlog (pendiente de estimar)
+    return user?.role === UserRole.TECNOLOGIA && task.status === TaskStatus.BACKLOG;
   };
 
-  const canPlan = (task: Task & { stage: TaskStage }): boolean => {
+  const canPlan = (task: Task): boolean => {
+    // Se puede planificar cuando está estimada pero sin asignar a equipo (To Do)
     return user?.role === UserRole.TECNOLOGIA && 
-           task.stage === TaskStage.PENDING_PLANNING &&
+           task.status === TaskStatus.TODO &&
            !!task.sprints && 
-           !!task.loadFactor;
+           !!task.loadFactor &&
+           !task.team; // Solo si no tiene equipo asignado aún
   };
 
-  const renderActionButtons = (task: Task & { stage: TaskStage }) => {
+  const canChangeStatus = (task: Task, newStatus: TaskStatus): boolean => {
+    const currentStatus = task.status;
+    
+    // Transiciones permitidas según el flujo de trabajo
+    switch (newStatus) {
+      case TaskStatus.TODO:
+        return currentStatus === TaskStatus.BACKLOG && !!task.sprints && !!task.team;
+      case TaskStatus.DOING:
+        return currentStatus === TaskStatus.TODO && !!task.startDate;
+      case TaskStatus.DEMO:
+        return currentStatus === TaskStatus.DOING;
+      case TaskStatus.DONE:
+        return currentStatus === TaskStatus.DEMO;
+      default:
+        return false;
+    }
+  };
+
+  const renderActionButtons = (task: Task) => {
     return (
       <div className="d-flex gap-1">
         {canEstimate(task) && (
@@ -198,12 +218,12 @@ const TaskTable: React.FC<TaskTableProps> = ({
             <tr>
               <th 
                 style={{ cursor: onSortChange ? 'pointer' : 'default' }}
-                onClick={() => handleSort('stage')}
+                onClick={() => handleSort('status')}
               >
                 Estado
                 {onSortChange && (
                   <FontAwesomeIcon 
-                    icon={getSortIcon('stage')} 
+                    icon={getSortIcon('status')} 
                     className="ms-1" 
                   />
                 )}
@@ -248,7 +268,7 @@ const TaskTable: React.FC<TaskTableProps> = ({
               <th>Equipo</th>
               <th>Estimación / Recursos</th>
               <th>Fechas</th>
-              <th>Estado</th>
+              <th>Alertas</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -264,7 +284,6 @@ const TaskTable: React.FC<TaskTableProps> = ({
           </tbody>
         </Table>
       </div>
-      
       {renderPagination()}
     </div>
   );

@@ -16,11 +16,13 @@ export interface User {
   updatedAt?: Date;
 }
 
-// Tipos para tareas
+// Tipos para tareas - Estados unificados
 export enum TaskStatus {
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed'
+  BACKLOG = 'backlog',
+  TODO = 'todo',
+  DOING = 'doing', 
+  DEMO = 'demo',
+  DONE = 'done'
 }
 
 export interface Task {
@@ -74,7 +76,7 @@ export interface CurrentProject {
   name: string; // Mapea a Task.subject
   startDate: Date;
   endDate: Date;
-  status: 'in_progress' | 'finishing_soon' | 'starting_soon';
+  status: 'doing' | 'demo' | 'todo';
   loadFactor: number; // Factor de carga que consume del equipo
   department: string; // Nombre del departamento (Task.department se convierte a string)
 }
@@ -122,15 +124,6 @@ export interface TaskFilters {
   hasResponsible?: boolean;
   hasFunctional?: boolean;
   hasEstimation?: boolean;
-  stage?: TaskStage;
-}
-
-export enum TaskStage {
-  BACKLOG = 'backlog',
-  PENDING_PLANNING = 'pending_planning',
-  PLANNED = 'planned',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed'
 }
 
 // Tipos para paginación

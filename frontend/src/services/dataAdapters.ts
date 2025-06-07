@@ -1,4 +1,4 @@
-import { Task, TaskStatus, TaskStage, Team, Department, User } from '../types';
+import { Task, TaskStatus, Team, Department, User } from '../types';
 
 /**
  * Adaptador para convertir datos del backend al formato esperado por el frontend
@@ -6,50 +6,49 @@ import { Task, TaskStatus, TaskStage, Team, Department, User } from '../types';
 
 // Mapeo de estados de Redmine a nuestros estados
 const STATUS_MAPPING: Record<string, TaskStatus> = {
-  'New': TaskStatus.PENDING,
-  'In Progress': TaskStatus.IN_PROGRESS,
-  'Closed': TaskStatus.COMPLETED,
-  'Resolved': TaskStatus.COMPLETED,
-  'Feedback': TaskStatus.IN_PROGRESS,
-  'Rejected': TaskStatus.PENDING,
+  'New': TaskStatus.BACKLOG,
+  'In Progress': TaskStatus.DOING,
+  'Closed': TaskStatus.DONE,
+  'Resolved': TaskStatus.DONE,
+  'Feedback': TaskStatus.DEMO,
+  'Rejected': TaskStatus.BACKLOG,
 };
 
-// Mapeo de etapas del backend a nuestras etapas
-const STAGE_MAPPING: Record<string, TaskStage> = {
-  'sin_planificar': TaskStage.BACKLOG,
-  'planificada': TaskStage.PLANNED,
-  'en_curso': TaskStage.IN_PROGRESS,
-  'finalizada': TaskStage.COMPLETED,
+// Mapeo de etapas del backend a nuestros estados
+const STAGE_MAPPING: Record<string, TaskStatus> = {
+  'sin_planificar': TaskStatus.BACKLOG,
+  'planificada': TaskStatus.TODO,
+  'en_curso': TaskStatus.DOING,
+  'finalizada': TaskStatus.DONE,
 };
 
 /**
  * Convierte una tarea del backend al formato del frontend
  */
-export const adaptBackendTask = (backendTask: any): Task & { stage: TaskStage } => {
+export const adaptBackendTask = (backendTask: any): Task => {
   // Determinar el status basado en el estado de Redmine
-  let status = TaskStatus.PENDING;
+  let status = TaskStatus.BACKLOG;
   if (backendTask.status?.name) {
-    status = STATUS_MAPPING[backendTask.status.name] || TaskStatus.PENDING;
+    status = STATUS_MAPPING[backendTask.status.name] || TaskStatus.BACKLOG;
   }
 
-  // Determinar el stage basado en la etapa del backend
-  let stage = TaskStage.BACKLOG;
+  // Determinar el status basado en la etapa del backend
   if (backendTask.etapa) {
-    stage = STAGE_MAPPING[backendTask.etapa] || TaskStage.BACKLOG;
+    status = STAGE_MAPPING[backendTask.etapa] || TaskStatus.BACKLOG;
   }
 
   // Si no tiene etapa del backend, calcularlo basado en los datos
   if (!backendTask.etapa) {
-    if (status === TaskStatus.COMPLETED) {
-      stage = TaskStage.COMPLETED;
-    } else if (status === TaskStatus.IN_PROGRESS) {
-      stage = TaskStage.IN_PROGRESS;
+    if (status === TaskStatus.DONE) {
+      status = TaskStatus.DONE;
+    } else if (status === TaskStatus.DOING) {
+      status = TaskStatus.DOING;
     } else if (backendTask.equipo_asignado && backendTask.fecha_inicio_planificada && backendTask.fecha_fin_planificada) {
-      stage = TaskStage.PLANNED;
+      status = TaskStatus.TODO;
     } else if (backendTask.tiene_responsable && backendTask.tiene_funcional && backendTask.estimacion_sprints) {
-      stage = TaskStage.PENDING_PLANNING;
+      status = TaskStatus.TODO;
     } else {
-      stage = TaskStage.BACKLOG;
+      status = TaskStatus.BACKLOG;
     }
   }
 
@@ -70,7 +69,6 @@ export const adaptBackendTask = (backendTask: any): Task & { stage: TaskStage } 
     startDate: backendTask.fecha_inicio_planificada ? new Date(backendTask.fecha_inicio_planificada) : undefined,
     endDate: backendTask.fecha_fin_planificada ? new Date(backendTask.fecha_fin_planificada) : undefined,
     priorityOrder: backendTask.orden_prioridad,
-    stage
   };
 };
 
@@ -140,11 +138,11 @@ export const adaptBackendStats = (backendResponse: any) => {
   return {
     total: stats.total_tareas || 0,
     byStage: {
-      [TaskStage.BACKLOG]: stats.por_etapa?.sin_planificar || 0,
-      [TaskStage.PENDING_PLANNING]: stats.problematicas?.pendientes_planificar || 0,
-      [TaskStage.PLANNED]: stats.por_etapa?.planificada || 0,
-      [TaskStage.IN_PROGRESS]: stats.por_etapa?.en_curso || 0,
-      [TaskStage.COMPLETED]: stats.por_etapa?.finalizada || 0,
+      [TaskStatus.BACKLOG]: stats.por_etapa?.sin_planificar || 0,
+      [TaskStatus.TODO]: stats.por_etapa?.planificada || 0,
+      [TaskStatus.DOING]: stats.por_etapa?.en_curso || 0,
+      [TaskStatus.DEMO]: 0, // No hay mapeo directo del backend
+      [TaskStatus.DONE]: stats.por_etapa?.finalizada || 0,
     },
     byStatus: stats.por_estado || {},
     byPriority: stats.por_prioridad || {},

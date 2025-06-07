@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Row, Col, Badge, Button, ProgressBar } from 'react-bootstrap';
+import { Card, Row, Col, Badge, Button, ProgressBar, Alert } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faStar, 
@@ -8,22 +8,26 @@ import {
   faChevronRight,
   faClock,
   faExternalLinkAlt,
-  faHome
+  faHome,
+  faExclamationTriangle,
+  faInfoCircle
 } from '@fortawesome/free-solid-svg-icons';
-import { TeamRecommendation, Task, TaskStage } from '../../../types';
+import { TeamRecommendation, Task, TaskStatus } from '../../../types';
 import CurrentProjectsList from './CurrentProjectsList';
 import './TeamRecommendationsList.css';
 
 interface TeamRecommendationsListProps {
   recommendations: TeamRecommendation[];
-  task: Task & { stage: TaskStage };
+  loading: boolean;
   onTeamSelect: (teamId: number) => void;
+  task: Task;
 }
 
 const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
   recommendations,
-  task,
-  onTeamSelect
+  loading,
+  onTeamSelect,
+  task
 }) => {
 
   const getScoreClass = (score: number): string => {

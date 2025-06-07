@@ -1,7 +1,7 @@
 import { mockTasks, getTasksWithStage } from './mockData/tasks';
 import { getAllTeamsWithCurrentLoad } from './mockData/teams';
 import { mockDepartments, getDepartmentName } from './mockData/departments';
-import { TaskStatus, TaskStage, Alert, AlertType } from '../types';
+import { TaskStatus, Alert, AlertType } from '../types';
 import { TaskService } from './taskService';
 import { userService } from './api';
 import { adaptBackendUsersResponse } from './dataAdapters';
@@ -35,9 +35,9 @@ export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => 
 
     // Métricas básicas de tareas del backend
     const totalTasks = stats.total;
-    const pendingTasks = stats.byStage[TaskStage.BACKLOG] + stats.byStage[TaskStage.PENDING_PLANNING];
-    const inProgressTasks = stats.byStage[TaskStage.IN_PROGRESS];
-    const completedTasks = stats.byStage[TaskStage.COMPLETED];
+    const pendingTasks = (stats.byStage?.[TaskStatus.BACKLOG] || 0) + (stats.byStage?.[TaskStatus.TODO] || 0);
+    const inProgressTasks = stats.byStage?.[TaskStatus.DOING] || 0;
+    const completedTasks = (stats.byStage?.[TaskStatus.DEMO] || 0) + (stats.byStage?.[TaskStatus.DONE] || 0);
 
     // Utilización promedio de equipos (desde mock)
     const teamUtilization = Math.round(
@@ -77,9 +77,9 @@ export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => 
     const teams = getAllTeamsWithCurrentLoad();
 
     const totalTasks = tasksWithStage.length;
-    const pendingTasks = tasksWithStage.filter(task => task.status === TaskStatus.PENDING).length;
-    const inProgressTasks = tasksWithStage.filter(task => task.status === TaskStatus.IN_PROGRESS).length;
-    const completedTasks = tasksWithStage.filter(task => task.status === TaskStatus.COMPLETED).length;
+    const pendingTasks = tasksWithStage.filter(task => task.status === TaskStatus.BACKLOG || task.status === TaskStatus.TODO).length;
+    const inProgressTasks = tasksWithStage.filter(task => task.status === TaskStatus.DOING).length;
+    const completedTasks = tasksWithStage.filter(task => task.status === TaskStatus.DEMO || task.status === TaskStatus.DONE).length;
 
     const teamUtilization = Math.round(
       teams.reduce((sum, team) => sum + (team.currentLoad / team.capacity), 0) / teams.length * 100
@@ -118,7 +118,7 @@ const generateCriticalAlerts = (tasks: any[], teams: any[]): Alert[] => {
   const overdueTasks = tasks.filter(task => 
     task.endDate && 
     new Date(task.endDate) < today && 
-    task.status !== TaskStatus.COMPLETED
+    task.status !== TaskStatus.DONE
   );
 
   overdueTasks.forEach(task => {
@@ -151,8 +151,7 @@ const generateCriticalAlerts = (tasks: any[], teams: any[]): Alert[] => {
 
   // Alertas por tareas sin asignar a equipo
   const unassignedTasks = tasks.filter(task => 
-    task.status === TaskStatus.PENDING && 
-    task.stage === TaskStage.PENDING_PLANNING &&
+    task.status === TaskStatus.TODO && 
     !task.team
   );
 
@@ -180,7 +179,7 @@ export const getUpcomingDeadlines = () => {
 
   return mockTasks.filter(task => 
     task.endDate && 
-    task.status !== TaskStatus.COMPLETED &&
+    task.status !== TaskStatus.DONE &&
     new Date(task.endDate) >= today &&
     new Date(task.endDate) <= nextWeek
   ).map(task => ({

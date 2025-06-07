@@ -4,7 +4,7 @@ import {
   PaginatedResponse, 
   SearchParams, 
   SortConfig, 
-  TaskStage,
+  TaskStatus,
   UserRole,
   TeamRecommendation,
   CurrentProject
@@ -33,14 +33,14 @@ const adaptTaskToCurrentProject = (task: Task): CurrentProject => {
   const now = new Date();
   
   // Determinar estado basado en fechas
-  let status: CurrentProject['status'] = 'in_progress';
+  let status: CurrentProject['status'] = 'doing';
   if (task.startDate && task.endDate) {
     const daysDiff = Math.ceil((task.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     
     if (now < task.startDate) {
-      status = 'starting_soon';
+      status = 'todo';
     } else if (daysDiff <= 7) {
-      status = 'finishing_soon';
+      status = 'demo';
     }
   }
 
@@ -65,7 +65,7 @@ const getCurrentProjectsByTeamFromTasks = (teamId: number): CurrentProject[] => 
   // Filtrar tareas que están asignadas al equipo y en progreso o planificadas
   const teamTasks = tasksWithStage.filter(task => 
     task.team === teamId && 
-    (task.stage === TaskStage.PLANNED || task.stage === TaskStage.IN_PROGRESS) &&
+    (task.status === TaskStatus.TODO || task.status === TaskStatus.DOING) &&
     task.startDate && 
     task.endDate
   );
@@ -118,7 +118,7 @@ export class TaskService {
     sort?: SortConfig,
     userRole?: UserRole,
     userDepartment?: number
-  ): Promise<PaginatedResponse<Task & { stage: TaskStage }>> {
+  ): Promise<PaginatedResponse<Task>> {
     try {
       // Convertir filtros del frontend al formato del backend
       const backendFilters = adaptFiltersToBackend(filters || {});
@@ -177,11 +177,11 @@ export class TaskService {
   static async getPendingPlanningTasks(
     userRole?: UserRole,
     userDepartment?: number
-  ): Promise<(Task & { stage: TaskStage })[]> {
+  ): Promise<Task[]> {
     await delay(250);
     
     let tasks = getTasksWithStage().filter(task => 
-      task.stage === TaskStage.PENDING_PLANNING
+      task.status === TaskStatus.BACKLOG
     );
     
     // Filtrar por departamento si es usuario de negocio
@@ -200,35 +200,44 @@ export class TaskService {
     userDepartment?: number
   ): Promise<{
     total: number;
-    byStage: Record<TaskStage, number>;
+    byStage: Record<TaskStatus, number>;
     byStatus: Record<string, number>;
     byPriority: Record<number, number>;
   }> {
     try {
-      const filters: any = {};
-      
-      // Si es usuario de negocio, filtrar por su departamento
-      if (userRole === UserRole.NEGOCIO && userDepartment) {
-        // Mapear ID de departamento a nombre para el backend
-        const departmentNames: Record<number, string> = {
-          1: 'Tecnología',
-          2: 'Marketing',
-          3: 'Ventas',
-          4: 'Recursos Humanos',
-          5: 'Finanzas',
-          6: 'Operaciones',
-          7: 'Atención al Cliente',
-          8: 'Producto',
-        };
-        filters.departamento = departmentNames[userDepartment];
-      }
-      
-      const response = await taskService.getTaskStats(filters);
+      // Intentar obtener estadísticas del backend
+      const response = await taskService.getTaskStats();
       return adaptBackendStats(response);
       
     } catch (error) {
       console.error('Error al obtener estadísticas del backend:', error);
-      throw new Error('Error al cargar las estadísticas. Verifique su conexión.');
+      
+      // Fallback a datos mock
+      let tasks = getTasksWithStage();
+      
+      // Filtrar por departamento si es usuario de negocio
+      if (userRole === UserRole.NEGOCIO && userDepartment) {
+        tasks = tasks.filter(task => task.department === userDepartment);
+      }
+      
+      const stats = {
+        total: tasks.length,
+        byStage: {} as Record<TaskStatus, number>,
+        byStatus: {} as Record<string, number>,
+        byPriority: {} as Record<number, number>
+      };
+      
+      // Contar por estado
+      Object.values(TaskStatus).forEach(status => {
+        stats.byStage[status] = tasks.filter(task => task.status === status).length;
+      });
+      
+      // Contar por prioridad
+      [1, 2, 3].forEach(priority => {
+        stats.byPriority[priority] = tasks.filter(task => task.priority === priority).length;
+      });
+      
+      return stats;
     }
   }
   
@@ -236,16 +245,16 @@ export class TaskService {
    * Aplicar filtros a las tareas
    */
   private static applyFilters(
-    tasks: (Task & { stage: TaskStage })[], 
+    tasks: Task[], 
     filters: TaskFilters
-  ): (Task & { stage: TaskStage })[] {
+  ): Task[] {
     return tasks.filter(task => {
       if (filters.department && task.department !== filters.department) return false;
       if (filters.status && task.status !== filters.status) return false;
       if (filters.assignedTo && task.assignedTo !== filters.assignedTo) return false;
       if (filters.team && task.team !== filters.team) return false;
       if (filters.priority && task.priority !== filters.priority) return false;
-      if (filters.stage && task.stage !== filters.stage) return false;
+              if (filters.status && task.status !== filters.status) return false;
       
       // Filtros booleanos
       if (filters.hasResponsible !== undefined) {
@@ -275,9 +284,9 @@ export class TaskService {
    * Aplicar búsqueda por texto
    */
   private static applySearch(
-    tasks: (Task & { stage: TaskStage })[], 
+    tasks: (Task & { stage: TaskStatus })[], 
     search: SearchParams
-  ): (Task & { stage: TaskStage })[] {
+  ): (Task & { stage: TaskStatus })[] {
     const query = search.query.toLowerCase();
     
     return tasks.filter(task => {
@@ -295,9 +304,9 @@ export class TaskService {
    * Aplicar ordenamiento
    */
   private static applySort(
-    tasks: (Task & { stage: TaskStage })[], 
+    tasks: (Task & { stage: TaskStatus })[], 
     sort: SortConfig
-  ): (Task & { stage: TaskStage })[] {
+  ): (Task & { stage: TaskStatus })[] {
     return [...tasks].sort((a, b) => {
       const aValue = (a as any)[sort.field];
       const bValue = (b as any)[sort.field];
@@ -337,7 +346,7 @@ export class TaskService {
     taskId: number,
     sprints: number,
     loadFactor: number
-  ): Promise<Task & { stage: TaskStage }> {
+  ): Promise<Task & { stage: TaskStatus }> {
     await delay(500); // Simular delay de red
     
     const taskIndex = mockTasks.findIndex(task => task.id === taskId);
@@ -350,7 +359,7 @@ export class TaskService {
     
     // Verificar que la tarea esté en estado correcto para estimación
     const currentStage = getTaskStage(task);
-    if (currentStage !== TaskStage.PENDING_PLANNING) {
+    if (currentStage !== TaskStatus.BACKLOG) {
       throw new Error(`No se puede estimar la tarea en estado: ${currentStage}`);
     }
     
@@ -400,7 +409,7 @@ export class TaskService {
         team.id,
         task.sprints,
         task.loadFactor,
-        plannedTasks
+        plannedTasks.map(t => ({ ...t, stage: getTaskStage(t) }))
       );
 
       // Obtener afinidad con el departamento
@@ -446,7 +455,7 @@ export class TaskService {
     teamId: number,
     startDate: Date,
     endDate: Date
-  ): Promise<Task & { stage: TaskStage }> {
+  ): Promise<Task & { stage: TaskStatus }> {
     await delay(600); // Simular procesamiento
     
     const taskIndex = mockTasks.findIndex(task => task.id === taskId);
@@ -459,7 +468,7 @@ export class TaskService {
     
     // Verificar que la tarea esté en estado correcto
     const currentStage = getTaskStage(task);
-    if (currentStage !== TaskStage.PENDING_PLANNING) {
+    if (currentStage !== TaskStatus.BACKLOG) {
       throw new Error(`No se puede planificar la tarea en estado: ${currentStage}`);
     }
 
@@ -520,7 +529,7 @@ export class TaskService {
     // Obtener tareas planificadas del equipo (mantenemos la lógica existente para tareas del sistema)
     const teamTasks = getTasksWithStage().filter(t => 
       t.team === teamId && 
-      (t.stage === TaskStage.PLANNED || t.stage === TaskStage.IN_PROGRESS) &&
+      (t.status === TaskStatus.TODO || t.status === TaskStatus.DOING) &&
       t.id !== excludeTaskId
     );
 
@@ -579,7 +588,7 @@ export class TaskService {
     teamId: number,
     sprints: number,
     loadFactor: number,
-    plannedTasks: (Task & { stage: TaskStage })[]
+    plannedTasks: (Task & { stage: TaskStatus })[]
   ): { possibleStartDate: Date; possibleEndDate: Date } {
     const team = getTeamById(teamId);
     if (!team) {

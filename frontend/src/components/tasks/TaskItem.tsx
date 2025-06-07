@@ -8,50 +8,52 @@ import {
   faExclamationTriangle,
   faCheckCircle,
   faHourglass,
-  faClock
+  faClock,
+  faPlay,
+  faEye
 } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStage } from '../../types';
+import { Task, TaskStatus } from '../../types';
 import { getDepartmentName } from '../../services/mockData/departments';
 import { getTeamName } from '../../services/mockData/teams';
 import { getUserName } from '../../services/mockData/users';
 
 interface TaskItemProps {
-  task: Task & { stage: TaskStage };
-  onClick?: (task: Task & { stage: TaskStage }) => void;
+  task: Task;
+  onClick?: (task: Task) => void;
   actionButtons?: React.ReactNode;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => {
   
-  const getStageColor = (stage: TaskStage): string => {
-    switch (stage) {
-      case TaskStage.BACKLOG: return 'secondary';
-      case TaskStage.PENDING_PLANNING: return 'warning';
-      case TaskStage.PLANNED: return 'info';
-      case TaskStage.IN_PROGRESS: return 'primary';
-      case TaskStage.COMPLETED: return 'success';
+  const getStatusColor = (status: TaskStatus): string => {
+    switch (status) {
+      case TaskStatus.BACKLOG: return 'secondary';
+      case TaskStatus.TODO: return 'warning';
+      case TaskStatus.DOING: return 'primary';
+      case TaskStatus.DEMO: return 'info';
+      case TaskStatus.DONE: return 'success';
       default: return 'secondary';
     }
   };
   
-  const getStageIcon = (stage: TaskStage) => {
-    switch (stage) {
-      case TaskStage.BACKLOG: return faClock;
-      case TaskStage.PENDING_PLANNING: return faExclamationTriangle;
-      case TaskStage.PLANNED: return faCalendarAlt;
-      case TaskStage.IN_PROGRESS: return faHourglass;
-      case TaskStage.COMPLETED: return faCheckCircle;
+  const getStatusIcon = (status: TaskStatus) => {
+    switch (status) {
+      case TaskStatus.BACKLOG: return faClock;
+      case TaskStatus.TODO: return faPlay;
+      case TaskStatus.DOING: return faHourglass;
+      case TaskStatus.DEMO: return faEye;
+      case TaskStatus.DONE: return faCheckCircle;
       default: return faClock;
     }
   };
   
-  const getStageText = (stage: TaskStage): string => {
-    switch (stage) {
-      case TaskStage.BACKLOG: return 'Backlog';
-      case TaskStage.PENDING_PLANNING: return 'Pendiente Planificación';
-      case TaskStage.PLANNED: return 'Planificada';
-      case TaskStage.IN_PROGRESS: return 'En Progreso';
-      case TaskStage.COMPLETED: return 'Completada';
+  const getStatusText = (status: TaskStatus): string => {
+    switch (status) {
+      case TaskStatus.BACKLOG: return 'Backlog';
+      case TaskStatus.TODO: return 'To Do';
+      case TaskStatus.DOING: return 'Doing';
+      case TaskStatus.DEMO: return 'Demo';
+      case TaskStatus.DONE: return 'Done';
       default: return 'Desconocido';
     }
   };
@@ -85,11 +87,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
       <td>
         <div className="d-flex align-items-center">
           <Badge 
-            bg={getStageColor(task.stage)} 
+            bg={getStatusColor(task.status)} 
             className="me-2"
           >
-            <FontAwesomeIcon icon={getStageIcon(task.stage)} className="me-1" />
-            {getStageText(task.stage)}
+            <FontAwesomeIcon icon={getStatusIcon(task.status)} className="me-1" />
+            {getStatusText(task.status)}
           </Badge>
         </div>
       </td>
@@ -168,7 +170,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
           {!task.functional && (
             <Badge bg="warning" className="small">Sin funcional</Badge>
           )}
-          {!task.sprints && task.stage !== TaskStage.BACKLOG && (
+          {!task.sprints && task.status !== TaskStatus.BACKLOG && (
             <Badge bg="danger" className="small">Sin estimación</Badge>
           )}
         </div>

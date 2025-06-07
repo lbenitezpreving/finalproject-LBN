@@ -9,10 +9,10 @@ import {
   faTasks,
   faUsers
 } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStage, TeamRecommendation } from '../../../types';
+import { Task, TeamRecommendation, TaskStatus } from '../../../types';
 import { TaskService } from '../../../services/taskService';
 import { getDepartmentName } from '../../../services/mockData/departments';
-import { getTaskStage } from '../../../services/mockData/tasks';
+
 import TeamRecommendationsList from './TeamRecommendationsList';
 import PlanningForm from './PlanningForm';
 import './TaskPlanningPage.css';
@@ -27,7 +27,7 @@ const TaskPlanningPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
   
-  const [task, setTask] = useState<(Task & { stage: TaskStage }) | null>(null);
+  const [task, setTask] = useState<Task | null>(null);
   const [recommendations, setRecommendations] = useState<TeamRecommendation[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [conflicts, setConflicts] = useState<ConflictInfo | null>(null);
@@ -57,19 +57,14 @@ const TaskPlanningPage: React.FC = () => {
         throw new Error('Tarea no encontrada');
       }
 
-      const taskWithStage = {
-        ...taskData,
-        stage: getTaskStage(taskData)
-      } as Task & { stage: TaskStage };
-
-      setTask(taskWithStage);
+      setTask(taskData);
 
       // Verificar que la tarea se puede planificar
-      if (taskWithStage.stage !== TaskStage.PENDING_PLANNING) {
-        throw new Error(`No se puede planificar una tarea en estado: ${taskWithStage.stage}`);
+      if (taskData.status !== TaskStatus.TODO) {
+        throw new Error(`No se puede planificar una tarea en estado: ${taskData.status}`);
       }
 
-      if (!taskWithStage.sprints || !taskWithStage.loadFactor) {
+      if (!taskData.sprints || !taskData.loadFactor) {
         throw new Error('La tarea debe tener estimación para poder planificarla');
       }
 
@@ -265,6 +260,7 @@ const TaskPlanningPage: React.FC = () => {
               <TeamRecommendationsList 
                 recommendations={recommendations}
                 task={task}
+                loading={loadingRecommendations}
                 onTeamSelect={handleTeamSelect}
               />
             )}
@@ -301,6 +297,7 @@ const TaskPlanningPage: React.FC = () => {
               conflicts={conflicts}
               onDateChange={handleDateChange}
               onSave={handleSavePlanning}
+              onBack={handleBackToRecommendations}
             />
           </Card.Body>
         </Card>
