@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '../types';
+import { authService } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -21,14 +22,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // Aquí implementaremos la verificación del token al cargar
+    // Verificar si hay un token guardado al cargar la aplicación
     const checkAuth = async () => {
       try {
-        // Por ahora solo simularemos un usuario autenticado
-        // En una implementación real, verificaríamos el token y obtendríamos los datos del usuario
-        setIsLoading(false);
+        const token = localStorage.getItem('token');
+        if (token) {
+          // Verificar si el token es válido obteniendo los datos del usuario actual
+          const response = await authService.getCurrentUser();
+          if (response.success && response.data) {
+            setUser(response.data);
+          } else {
+            // Token inválido, limpiar localStorage
+            localStorage.removeItem('token');
+            setUser(null);
+          }
+        }
       } catch (error) {
+        console.error('Error verificando autenticación:', error);
+        // Token inválido o error de red, limpiar localStorage
+        localStorage.removeItem('token');
         setUser(null);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -39,20 +53,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string): Promise<void> => {
     try {
       setIsLoading(true);
-      // Aquí implementaremos la lógica de inicio de sesión con el backend
-      // Por ahora simulamos un usuario autenticado
-      const mockUser: User = {
-        id: 1,
-        username,
-        name: 'Usuario Ejemplo',
-        email: `${username}@example.com`,
-        role: UserRole.TECNOLOGIA,
-      };
+      // Hacer login real con el backend
+      const response = await authService.login(username, password);
       
-      setUser(mockUser);
-      // Guardaríamos el token en localStorage
+      if (response.success && response.data) {
+        // Guardar el token en localStorage
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+        
+        // Establecer el usuario en el contexto
+        setUser(response.data.user);
+      } else {
+        throw new Error(response.message || 'Error de autenticación');
+      }
     } catch (error) {
-      throw new Error('Error de autenticación');
+      console.error('Error en login:', error);
+      // Limpiar cualquier token existente
+      localStorage.removeItem('token');
+      setUser(null);
+      throw new Error('Credenciales incorrectas');
     } finally {
       setIsLoading(false);
     }
@@ -60,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     // Eliminar token de localStorage
+    localStorage.removeItem('token');
     setUser(null);
   };
 

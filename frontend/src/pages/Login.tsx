@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,14 +17,14 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError(null);
     
-    if (!username || !password) {
-      setError('Por favor, introduce usuario y contraseña');
+    if (!email || !password) {
+      setError('Por favor, introduce email y contraseña');
       return;
     }
     
     try {
       setIsLoading(true);
-      await login(username, password);
+      await login(email, password);
       navigate('/dashboard');
     } catch (err) {
       setError('Credenciales incorrectas');
@@ -48,12 +48,12 @@ const Login: React.FC = () => {
               
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Usuario</Form.Label>
+                  <Form.Label>Email</Form.Label>
                   <Form.Control
-                    type="text"
-                    placeholder="Introduce tu usuario"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    type="email"
+                    placeholder="Introduce tu email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}
                   />
                 </Form.Group>

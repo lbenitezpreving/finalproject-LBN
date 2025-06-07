@@ -1,17 +1,19 @@
 // Tipos de usuario
 export enum UserRole {
-  NEGOCIO = 'negocio',
-  TECNOLOGIA = 'tecnologia',
-  ADMIN = 'admin'
+  NEGOCIO = 'NEGOCIO',
+  TECNOLOGIA = 'TECNOLOGIA',
+  ADMIN = 'ADMIN'
 }
 
 export interface User {
   id: number;
-  username: string;
+  username?: string; // Opcional, se puede usar email como username
   name: string;
   email: string;
   role: UserRole;
   department?: number; // ID del departamento (solo para usuarios de negocio)
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 // Tipos para tareas

@@ -140,12 +140,13 @@ export const affinityService = {
 // Servicio de autenticación
 export const authService = {
   login: async (username: string, password: string) => {
-    const response = await api.post('/auth/login', { username, password });
+    // El backend espera email, así que asumimos que username es el email
+    const response = await api.post('/auth/login', { email: username, password });
     return response.data;
   },
   
   getCurrentUser: async () => {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/auth/profile');
     return response.data;
   },
 };
