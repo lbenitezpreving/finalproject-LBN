@@ -18,10 +18,10 @@ const Navbar: React.FC = () => {
         <BootstrapNavbar.Toggle aria-controls="main-navbar-nav" />
         <BootstrapNavbar.Collapse id="main-navbar-nav">
           <Nav className="me-auto">
+            <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
             <Nav.Link as={Link} to="/tasks">Tareas</Nav.Link>
             <Nav.Link as={Link} to="/gantt">Gantt</Nav.Link>
-            <Nav.Link as={Link} to="/teams">Equipos</Nav.Link>
-            <Nav.Link as={Link} to="/kpis">KPIs</Nav.Link>
+            <Nav.Link as={Link} to="/alerts">Alertas</Nav.Link>
           </Nav>
           {user && (
             <Nav>
