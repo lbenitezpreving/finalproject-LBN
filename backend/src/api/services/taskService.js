@@ -1,9 +1,36 @@
 const { prisma } = require('../../config/database');
-const redmineService = require('./redmineService');
+const redmineServiceInstance = require('./redmine.service');
 
 /**
  * Servicio para gestión de tareas que combina datos de Redmine y TaskDistributor
  */
+
+// Adapter para mantener compatibilidad con la función getIssues
+const redmineService = {
+  async getIssues(filters = {}, offset = 0, limit = 25) {
+    // Construir parámetros para Redmine API
+    const params = {
+      ...filters,
+      offset,
+      limit
+    };
+    
+    // Llamar al método real del servicio
+    const response = await redmineServiceInstance.listIssues(params);
+    
+    // Retornar en el formato esperado
+    return {
+      issues: response.issues || [],
+      total_count: response.total_count || 0,
+      offset: response.offset || offset,
+      limit: response.limit || limit
+    };
+  },
+  
+  async getIssue(issueId) {
+    return await redmineServiceInstance.getIssue(issueId);
+  }
+};
 
 /**
  * Combina datos de Redmine con información extendida de TaskDistributor
@@ -42,6 +69,45 @@ const combineTasksWithExtendedData = async (redmineTasks) => {
   extendedTasks.forEach(task => {
     extendedTasksMap.set(task.redmineTaskId, task);
   });
+
+  // Auto-crear registros faltantes para tareas de Redmine que no existen en TaskDistributor
+  const missingRedmineIds = redmineIds.filter(id => !extendedTasksMap.has(id));
+  
+  if (missingRedmineIds.length > 0) {
+    console.log(`🔄 Auto-creando ${missingRedmineIds.length} registros TaskDistributor para tareas: ${missingRedmineIds.join(', ')}`);
+    
+    // Crear registros faltantes en lote
+    const newExtendedTasks = await Promise.all(
+      missingRedmineIds.map(redmineTaskId => 
+        prisma.tareaExtended.create({
+          data: {
+            redmineTaskId,
+            ordenPrioridad: null, // Se definirá desde TaskDistributor
+            factorCarga: 1.0, // Valor por defecto
+            estimacionSprints: null, // Se estimará desde TaskDistributor
+            fechaInicioPlanificada: null, // Se planificará desde TaskDistributor
+            fechaFinPlanificada: null
+          },
+          include: {
+            asignaciones: {
+              include: {
+                equipo: true
+              },
+              orderBy: {
+                fechaAsignacion: 'desc'
+              },
+              take: 1
+            }
+          }
+        })
+      )
+    );
+
+    // Agregar los nuevos registros al mapa
+    newExtendedTasks.forEach(task => {
+      extendedTasksMap.set(task.redmineTaskId, task);
+    });
+  }
 
   // Combinar datos
   return redmineTasks.map(redmineTask => {
@@ -411,7 +477,7 @@ const getTaskById = async (taskId) => {
     // Obtener tarea de Redmine
     const redmineResponse = await redmineService.getIssue(taskId);
     
-    // Combinar con datos extendidos
+    // Combinar con datos extendidos (auto-creará registro si no existe)
     const combinedTasks = await combineTasksWithExtendedData([redmineResponse.issue]);
     
     if (combinedTasks.length === 0) {

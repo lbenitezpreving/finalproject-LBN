@@ -2,6 +2,9 @@ import { mockTasks, getTasksWithStage } from './mockData/tasks';
 import { getAllTeamsWithCurrentLoad } from './mockData/teams';
 import { mockDepartments, getDepartmentName } from './mockData/departments';
 import { TaskStatus, TaskStage, Alert, AlertType } from '../types';
+import { TaskService } from './taskService';
+import { userService } from './api';
+import { adaptBackendUsersResponse } from './dataAdapters';
 
 export interface DashboardMetrics {
   totalTasks: number;
@@ -19,49 +22,88 @@ export interface DashboardMetrics {
 }
 
 /**
- * Calcular métricas del dashboard basándose en los datos mock
+ * Calcular métricas del dashboard basándose en los datos reales del backend
  */
-export const calculateDashboardMetrics = (): DashboardMetrics => {
-  const tasks = mockTasks;
-  const tasksWithStage = getTasksWithStage();
-  const teams = getAllTeamsWithCurrentLoad();
+export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => {
+  try {
+    // Obtener estadísticas reales del backend
+    const stats = await TaskService.getTaskStats();
+    
+    // Para las funcionalidades no implementadas en backend, usar mock
+    const tasksWithStage = getTasksWithStage();
+    const teams = getAllTeamsWithCurrentLoad();
 
-  // Métricas básicas de tareas
-  const totalTasks = tasks.length;
-  const pendingTasks = tasks.filter(task => task.status === TaskStatus.PENDING).length;
-  const inProgressTasks = tasks.filter(task => task.status === TaskStatus.IN_PROGRESS).length;
-  const completedTasks = tasks.filter(task => task.status === TaskStatus.COMPLETED).length;
+    // Métricas básicas de tareas del backend
+    const totalTasks = stats.total;
+    const pendingTasks = stats.byStage[TaskStage.BACKLOG] + stats.byStage[TaskStage.PENDING_PLANNING];
+    const inProgressTasks = stats.byStage[TaskStage.IN_PROGRESS];
+    const completedTasks = stats.byStage[TaskStage.COMPLETED];
 
-  // Utilización promedio de equipos
-  const teamUtilization = Math.round(
-    teams.reduce((sum, team) => sum + (team.currentLoad / team.capacity), 0) / teams.length * 100
-  );
+    // Utilización promedio de equipos (desde mock)
+    const teamUtilization = Math.round(
+      teams.reduce((sum, team) => sum + (team.currentLoad / team.capacity), 0) / teams.length * 100
+    );
 
-  // Distribución por departamento
-  const departmentCounts = mockDepartments.map(dept => ({
-    department: dept.name,
-    count: tasks.filter(task => task.department === dept.id).length,
-    percentage: 0
-  }));
+    // Distribución por departamento (fallback a mock por ahora)
+    const departmentCounts = mockDepartments.map(dept => ({
+      department: dept.name,
+      count: tasksWithStage.filter(task => task.department === dept.id).length,
+      percentage: 0
+    }));
 
-  // Calcular porcentajes
-  departmentCounts.forEach(dept => {
-    dept.percentage = Math.round((dept.count / totalTasks) * 100);
-  });
+    // Calcular porcentajes
+    departmentCounts.forEach(dept => {
+      dept.percentage = Math.round((dept.count / totalTasks) * 100);
+    });
 
-  // Generar alertas críticas
-  const alerts = generateCriticalAlerts(tasksWithStage, teams);
+    // Generar alertas críticas
+    const alerts = generateCriticalAlerts(tasksWithStage, teams);
 
-  return {
-    totalTasks,
-    pendingTasks,
-    inProgressTasks,
-    completedTasks,
-    criticalAlerts: alerts.length,
-    teamUtilization,
-    departmentDistribution: departmentCounts.filter(dept => dept.count > 0),
-    alerts
-  };
+    return {
+      totalTasks,
+      pendingTasks,
+      inProgressTasks,
+      completedTasks,
+      criticalAlerts: alerts.length,
+      teamUtilization,
+      departmentDistribution: departmentCounts.filter(dept => dept.count > 0),
+      alerts
+    };
+  } catch (error) {
+    console.error('Error al obtener métricas del dashboard:', error);
+    
+    // Fallback a datos mock en caso de error
+    const tasksWithStage = getTasksWithStage();
+    const teams = getAllTeamsWithCurrentLoad();
+
+    const totalTasks = tasksWithStage.length;
+    const pendingTasks = tasksWithStage.filter(task => task.status === TaskStatus.PENDING).length;
+    const inProgressTasks = tasksWithStage.filter(task => task.status === TaskStatus.IN_PROGRESS).length;
+    const completedTasks = tasksWithStage.filter(task => task.status === TaskStatus.COMPLETED).length;
+
+    const teamUtilization = Math.round(
+      teams.reduce((sum, team) => sum + (team.currentLoad / team.capacity), 0) / teams.length * 100
+    );
+
+    const departmentCounts = mockDepartments.map(dept => ({
+      department: dept.name,
+      count: tasksWithStage.filter(task => task.department === dept.id).length,
+      percentage: Math.round((tasksWithStage.filter(task => task.department === dept.id).length / totalTasks) * 100)
+    }));
+
+    const alerts = generateCriticalAlerts(tasksWithStage, teams);
+
+    return {
+      totalTasks,
+      pendingTasks,
+      inProgressTasks,
+      completedTasks,
+      criticalAlerts: alerts.length,
+      teamUtilization,
+      departmentDistribution: departmentCounts.filter(dept => dept.count > 0),
+      alerts
+    };
+  }
 };
 
 /**

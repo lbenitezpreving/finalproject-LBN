@@ -77,7 +77,7 @@ if [ ! -f ".env" ]; then
     # Actualizar .env con valores generados
     sed -i "s/POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=$DB_PASSWORD/" .env
     sed -i "s/REDMINE_SECRET_KEY=.*/REDMINE_SECRET_KEY=$SECRET_KEY/" .env
-    sed -i "s/REDMINE_PORT=.*/REDMINE_PORT=3000/" .env
+    sed -i "s/REDMINE_PORT=.*/REDMINE_PORT=5000/" .env
     
     print_status "Archivo .env configurado con contraseñas generadas automáticamente"
 fi
@@ -91,7 +91,7 @@ print_status "Configurando firewall..."
 sudo systemctl status firewalld >/dev/null 2>&1 && {
     sudo firewall-cmd --permanent --add-port=80/tcp
     sudo firewall-cmd --permanent --add-port=443/tcp
-    sudo firewall-cmd --permanent --add-port=3000/tcp
+    sudo firewall-cmd --permanent --add-port=5000/tcp
     sudo firewall-cmd --reload
 } || print_warning "Firewall no está activo"
 
@@ -105,7 +105,7 @@ MAX_ATTEMPTS=30
 ATTEMPT=0
 
 while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-    if curl -f http://localhost:3000 >/dev/null 2>&1; then
+    if curl -f http://localhost:5000 >/dev/null 2>&1; then
         print_status "¡Redmine está listo!"
         break
     fi
@@ -153,7 +153,7 @@ if [ "$1" ] && [ "$1" != "$(curl -s http://169.254.169.254/latest/meta-data/publ
     echo "   HTTPS: https://$1"
     echo "   HTTP:  http://$1"
 else
-    echo "   HTTP: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):3000"
+    echo "   HTTP: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):5000"
 fi
 echo ""
 echo "🔐 Credenciales iniciales:"

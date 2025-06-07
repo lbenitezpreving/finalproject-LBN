@@ -9,6 +9,14 @@ import {
   TeamRecommendation,
   CurrentProject
 } from '../types';
+import { taskService, userService } from './api';
+import { 
+  adaptBackendTasksResponse, 
+  adaptBackendTask, 
+  adaptBackendStats,
+  adaptFiltersToBackend 
+} from './dataAdapters';
+// Fallback a mock data para funcionalidades no implementadas en backend
 import { mockTasks, getTasksWithStage, getTaskStage } from './mockData/tasks';
 import { getTeamById, getAllTeamsWithCurrentLoad } from './mockData/teams';
 import { getAffinityByTeamAndDepartment } from './mockData/affinityMatrix';
@@ -111,56 +119,56 @@ export class TaskService {
     userRole?: UserRole,
     userDepartment?: number
   ): Promise<PaginatedResponse<Task & { stage: TaskStage }>> {
-    await delay(300); // Simular latencia de red
-    
-    let filteredTasks = getTasksWithStage();
-    
-    // Filtrar por rol de usuario (negocio solo ve su departamento)
-    if (userRole === UserRole.NEGOCIO && userDepartment) {
-      filteredTasks = filteredTasks.filter(task => task.department === userDepartment);
-    }
-    
-    // Aplicar filtros
-    if (filters) {
-      filteredTasks = this.applyFilters(filteredTasks, filters);
-    }
-    
-    // Aplicar búsqueda
-    if (search && search.query.trim()) {
-      filteredTasks = this.applySearch(filteredTasks, search);
-    }
-    
-    // Aplicar ordenamiento
-    if (sort) {
-      filteredTasks = this.applySort(filteredTasks, sort);
-    }
-    
-    // Aplicar paginación
-    const page = pagination?.page || 1;
-    const pageSize = pagination?.pageSize || 10;
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    
-    const paginatedTasks = filteredTasks.slice(startIndex, endIndex);
-    
-    return {
-      data: paginatedTasks,
-      pagination: {
-        currentPage: page,
-        pageSize,
-        totalItems: filteredTasks.length,
-        totalPages: Math.ceil(filteredTasks.length / pageSize)
+    try {
+      // Convertir filtros del frontend al formato del backend
+      const backendFilters = adaptFiltersToBackend(filters || {});
+      
+      // Agregar búsqueda si existe
+      if (search && search.query.trim()) {
+        backendFilters.search = search.query.trim();
       }
-    };
+      
+      // Agregar ordenamiento
+      if (sort) {
+        backendFilters.sort_by = sort.field;
+        backendFilters.sort_order = sort.direction;
+      }
+      
+      // Agregar paginación
+      const page = pagination?.page || 1;
+      const pageSize = pagination?.pageSize || 25;
+      backendFilters.offset = (page - 1) * pageSize;
+      backendFilters.limit = pageSize;
+      
+      // Llamar al API del backend
+      const response = await taskService.getTasks(backendFilters);
+      
+      // Adaptar la respuesta al formato del frontend
+      return adaptBackendTasksResponse(response);
+      
+    } catch (error) {
+      console.error('Error al obtener tareas del backend:', error);
+      throw new Error('Error al cargar las tareas. Verifique su conexión.');
+    }
   }
   
   /**
    * Obtener una tarea por ID
    */
   static async getTaskById(id: number): Promise<Task | null> {
-    await delay(200);
-    const task = mockTasks.find(t => t.id === id);
-    return task || null;
+    try {
+      const response = await taskService.getTaskById(id);
+      
+      if (!response.success || !response.data) {
+        return null;
+      }
+      
+      return adaptBackendTask(response.data);
+      
+    } catch (error) {
+      console.error('Error al obtener tarea del backend:', error);
+      throw new Error('Error al cargar la tarea. Verifique su conexión.');
+    }
   }
   
   /**
@@ -196,35 +204,32 @@ export class TaskService {
     byStatus: Record<string, number>;
     byPriority: Record<number, number>;
   }> {
-    await delay(200);
-    
-    let tasks = getTasksWithStage();
-    
-    // Filtrar por departamento si es usuario de negocio
-    if (userRole === UserRole.NEGOCIO && userDepartment) {
-      tasks = tasks.filter(task => task.department === userDepartment);
+    try {
+      const filters: any = {};
+      
+      // Si es usuario de negocio, filtrar por su departamento
+      if (userRole === UserRole.NEGOCIO && userDepartment) {
+        // Mapear ID de departamento a nombre para el backend
+        const departmentNames: Record<number, string> = {
+          1: 'Tecnología',
+          2: 'Marketing',
+          3: 'Ventas',
+          4: 'Recursos Humanos',
+          5: 'Finanzas',
+          6: 'Operaciones',
+          7: 'Atención al Cliente',
+          8: 'Producto',
+        };
+        filters.departamento = departmentNames[userDepartment];
+      }
+      
+      const response = await taskService.getTaskStats(filters);
+      return adaptBackendStats(response);
+      
+    } catch (error) {
+      console.error('Error al obtener estadísticas del backend:', error);
+      throw new Error('Error al cargar las estadísticas. Verifique su conexión.');
     }
-    
-    const stats = {
-      total: tasks.length,
-      byStage: {} as Record<TaskStage, number>,
-      byStatus: {} as Record<string, number>,
-      byPriority: {} as Record<number, number>
-    };
-    
-    // Inicializar contadores
-    Object.values(TaskStage).forEach(stage => {
-      stats.byStage[stage] = 0;
-    });
-    
-    // Contar por categorías
-    tasks.forEach(task => {
-      stats.byStage[task.stage]++;
-      stats.byStatus[task.status] = (stats.byStatus[task.status] || 0) + 1;
-      stats.byPriority[task.priority] = (stats.byPriority[task.priority] || 0) + 1;
-    });
-    
-    return stats;
   }
   
   /**

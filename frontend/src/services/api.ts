@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 
 // Crear una instancia de axios con la configuración por defecto
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:4000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -41,12 +41,22 @@ api.interceptors.response.use(
 export const taskService = {
   getTasks: async (filters?: Record<string, any>) => {
     const response = await api.get('/tasks', { params: filters });
-    return response.data;
+    return response.data; // { success: true, data: result.data, ... }
   },
   
   getTaskById: async (id: number) => {
     const response = await api.get(`/tasks/${id}`);
-    return response.data;
+    return response.data; // { success: true, data: result.data, ... }
+  },
+  
+  getTaskStats: async (filters?: Record<string, any>) => {
+    const response = await api.get('/tasks/stats', { params: filters });
+    return response.data; // { success: true, data: stats, ... }
+  },
+  
+  getFilterOptions: async () => {
+    const response = await api.get('/tasks/filter-options');
+    return response.data; // { success: true, data: options, ... }
   },
   
   createTask: async (taskData: any) => {
@@ -92,6 +102,24 @@ export const teamService = {
 export const departmentService = {
   getDepartments: async () => {
     const response = await api.get('/departments');
+    return response.data;
+  },
+};
+
+// Servicios de usuarios
+export const userService = {
+  getUsers: async (filters?: Record<string, any>) => {
+    const response = await api.get('/redmine/users', { params: filters });
+    return response.data; // { success: true, data: users, ... }
+  },
+  
+  getUserById: async (id: number) => {
+    const response = await api.get(`/redmine/users/${id}`);
+    return response.data;
+  },
+  
+  getCurrentUser: async () => {
+    const response = await api.get('/redmine/users/current');
     return response.data;
   },
 };

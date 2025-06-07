@@ -40,7 +40,7 @@ nano .env
 ```env
 POSTGRES_PASSWORD=tu_password_seguro
 REDMINE_SECRET_KEY=clave_secreta_muy_larga_y_segura
-REDMINE_PORT=3000
+REDMINE_PORT=5000
 ```
 
 ## 🚀 Despliegue
@@ -55,7 +55,7 @@ docker-compose up -d
 docker-compose logs -f redmine
 
 # Acceder a Redmine
-http://localhost:3000
+http://localhost:5000
 ```
 
 ### **Producción (EC2) con Nginx:**
@@ -71,7 +71,7 @@ http://tu-ip-ec2
 ## 🔧 Configuración Inicial de Redmine
 
 ### 1. **Primer acceso:**
-- URL: `http://localhost:3000` (local) o `http://tu-ip-ec2` (EC2)
+- URL: `http://localhost:5000` (local) o `http://tu-ip-ec2` (EC2)
 - Usuario: `admin`
 - Contraseña: `admin`
 
@@ -115,7 +115,7 @@ http://tu-ip-ec2
 
 ```env
 # En backend/.env
-REDMINE_BASE_URL="http://localhost:3000"  # Local
+REDMINE_BASE_URL="http://localhost:5000"  # Local
 # REDMINE_BASE_URL="http://tu-ip-ec2"     # EC2
 REDMINE_API_KEY="clave_api_generada"
 ```
@@ -153,7 +153,7 @@ docker-compose up -d
 - Puerto 22 (SSH): Tu IP únicamente
 - Puerto 80 (HTTP): 0.0.0.0/0
 - Puerto 443 (HTTPS): 0.0.0.0/0
-- Puerto 3000: Cerrado (solo acceso interno via nginx)
+- Puerto 5000: Cerrado (solo acceso interno via nginx)
 ```
 
 ### 2. **Certificados SSL con Let's Encrypt:**
@@ -216,7 +216,7 @@ docker-compose restart redmine-db
 ### **Puerto ocupado:**
 ```bash
 # Cambiar puerto en .env
-REDMINE_PORT=3001
+REDMINE_PORT=5001
 
 # Reiniciar
 docker-compose up -d

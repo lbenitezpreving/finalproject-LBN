@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:4000';
 
 async function checkSwaggerEndpoints() {
   console.log('🔍 Verificando endpoints de documentación de la API...\n');

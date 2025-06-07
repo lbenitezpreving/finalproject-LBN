@@ -8,7 +8,7 @@ dotenv.config();
 
 // Configuración base para la API de Redmine
 const redmineAPI = axios.create({
-  baseURL: process.env.REDMINE_API_URL || 'https://redmine.empresa.com/api',
+  baseURL: process.env.REDMINE_API_URL || 'http://localhost:5000',
   headers: {
     'X-Redmine-API-Key': process.env.REDMINE_API_KEY,
     'Content-Type': 'application/json'

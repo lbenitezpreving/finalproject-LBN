@@ -24,25 +24,60 @@ const Dashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<any[]>([]);
   const [highLoadTeams, setHighLoadTeams] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Cargar métricas del dashboard
-    const dashboardMetrics = calculateDashboardMetrics();
-    setMetrics(dashboardMetrics);
-    
-    // Cargar fechas límite próximas
-    setUpcomingDeadlines(getUpcomingDeadlines());
-    
-    // Cargar equipos con alta carga
-    setHighLoadTeams(getHighLoadTeams());
+    const loadDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Cargar métricas desde el backend
+        const dashboardMetrics = await calculateDashboardMetrics();
+        setMetrics(dashboardMetrics);
+        
+        // Cargar fechas límite próximas (aún desde mock)
+        setUpcomingDeadlines(getUpcomingDeadlines());
+        
+        // Cargar equipos con alta carga (aún desde mock)
+        setHighLoadTeams(getHighLoadTeams());
+        
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        setError('Error al cargar datos del dashboard. Verifique su conexión.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDashboardData();
   }, []);
 
   // Determina qué elementos mostrar según el rol
   const isNegocio = user?.role === UserRole.NEGOCIO;
   const isTecnologia = user?.role === UserRole.TECNOLOGIA;
 
-  if (!metrics) {
+  if (isLoading) {
     return <div className="d-flex justify-content-center p-4">Cargando métricas...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger m-4">
+        <h4>Error al cargar el Dashboard</h4>
+        <p>{error}</p>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => window.location.reload()}
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return <div className="d-flex justify-content-center p-4">No hay datos disponibles.</div>;
   }
 
   return (
