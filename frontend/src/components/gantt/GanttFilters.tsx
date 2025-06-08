@@ -4,8 +4,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilter, faUndo } from '@fortawesome/free-solid-svg-icons';
 import { GanttFilters, GanttService } from '../../services/ganttService';
 import { Department, Team, TaskStatus } from '../../types';
-import { mockDepartments } from '../../services/mockData/departments';
-import { mockTeams } from '../../services/mockData/teams';
 
 interface GanttFiltersProps {
   filters: GanttFilters;
@@ -19,8 +17,8 @@ const GanttFiltersComponent: React.FC<GanttFiltersProps> = ({
   loading = false
 }) => {
   // Estados locales para las opciones de filtros
-  const [departments, setDepartments] = useState<Department[]>(mockDepartments);
-  const [teams, setTeams] = useState<Team[]>(mockTeams);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [statuses, setStatuses] = useState<{ value: TaskStatus; label: string }[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 

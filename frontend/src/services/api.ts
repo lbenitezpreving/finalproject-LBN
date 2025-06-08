@@ -87,26 +87,41 @@ export const taskService = {
 
 // Servicios de equipos
 export const teamService = {
-  getTeams: async () => {
-    const response = await api.get('/teams');
+  getTeams: async (filters?: Record<string, any>) => {
+    const response = await api.get('/equipos', { params: filters });
     return response.data;
   },
   
   getTeamById: async (id: number) => {
-    const response = await api.get(`/teams/${id}`);
+    const response = await api.get(`/equipos/${id}`);
+    return response.data;
+  },
+  
+  getTeamStats: async () => {
+    const response = await api.get('/equipos/stats');
     return response.data;
   },
   
   updateTeam: async (id: number, teamData: any) => {
-    const response = await api.put(`/teams/${id}`, teamData);
+    const response = await api.put(`/equipos/${id}`, teamData);
     return response.data;
   },
 };
 
 // Servicios de departamentos
 export const departmentService = {
-  getDepartments: async () => {
-    const response = await api.get('/departments');
+  getDepartments: async (filters?: Record<string, any>) => {
+    const response = await api.get('/departamentos', { params: filters });
+    return response.data;
+  },
+  
+  getDepartmentById: async (id: number) => {
+    const response = await api.get(`/departamentos/${id}`);
+    return response.data;
+  },
+  
+  getDepartmentStats: async () => {
+    const response = await api.get('/departamentos/stats');
     return response.data;
   },
 };

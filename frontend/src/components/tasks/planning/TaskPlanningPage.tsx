@@ -11,7 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Task, TeamRecommendation, TaskStatus } from '../../../types';
 import { TaskService } from '../../../services/taskService';
-import { getDepartmentName } from '../../../services/mockData/departments';
+import { getDepartmentNameById } from '../../../services/dataAdapters';
 
 import TeamRecommendationsList from './TeamRecommendationsList';
 import PlanningForm from './PlanningForm';
@@ -28,6 +28,7 @@ const TaskPlanningPage: React.FC = () => {
   const navigate = useNavigate();
   
   const [task, setTask] = useState<Task | null>(null);
+  const [departmentName, setDepartmentName] = useState<string>('Cargando...');
   const [recommendations, setRecommendations] = useState<TeamRecommendation[]>([]);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [conflicts, setConflicts] = useState<ConflictInfo | null>(null);
@@ -58,6 +59,10 @@ const TaskPlanningPage: React.FC = () => {
       }
 
       setTask(taskData);
+
+      // Cargar nombre del departamento
+      const deptName = await getDepartmentNameById(taskData.department);
+      setDepartmentName(deptName);
 
       // Verificar que la tarea se puede planificar
       if (taskData.status !== TaskStatus.TODO) {
@@ -206,10 +211,10 @@ const TaskPlanningPage: React.FC = () => {
               <p className="text-muted mb-3">{task.description}</p>
               <div className="task-metadata">
                 <Row className="g-3">
-                  <Col sm={6}>
-                    <small className="text-muted d-block">Departamento</small>
-                    <strong>{getDepartmentName(task.department)}</strong>
-                  </Col>
+                                      <Col sm={6}>
+                      <small className="text-muted d-block">Departamento</small>
+                      <strong>{departmentName}</strong>
+                    </Col>
                   <Col sm={6}>
                     <small className="text-muted d-block">Prioridad</small>
                     <strong>Prioridad {task.priority}</strong>

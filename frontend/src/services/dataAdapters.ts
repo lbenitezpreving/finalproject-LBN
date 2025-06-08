@@ -226,4 +226,215 @@ export const adaptFiltersToBackend = (frontendFilters: any) => {
   }
 
   return backendFilters;
+};
+
+/**
+ * Convierte un equipo del backend al formato del frontend
+ */
+export const adaptBackendTeam = (backendTeam: any): Team => {
+  return {
+    id: backendTeam.id,
+    name: backendTeam.nombre,
+    capacity: backendTeam.capacidad || 0,
+    currentLoad: 0, // Se calculará dinámicamente
+    isExternal: backendTeam.tipo === 'EXTERNO'
+  };
+};
+
+/**
+ * Convierte un departamento del backend al formato del frontend
+ */
+export const adaptBackendDepartment = (backendDepartment: any): Department => {
+  return {
+    id: backendDepartment.id,
+    name: backendDepartment.nombre
+  };
+};
+
+/**
+ * Adapta la respuesta de equipos del backend
+ */
+export const adaptBackendTeamsResponse = (backendResponse: any): Team[] => {
+  if (!backendResponse.success || !backendResponse.data) {
+    console.warn('Invalid teams response format:', backendResponse);
+    return [];
+  }
+  
+  // La respuesta del backend tiene la estructura: { data: { equipos: [...], pagination: {...} } }
+  const equipos = backendResponse.data.equipos || backendResponse.data;
+  
+  if (!Array.isArray(equipos)) {
+    console.warn('Equipos is not an array:', equipos);
+    return [];
+  }
+  
+  return equipos.map(adaptBackendTeam);
+};
+
+/**
+ * Adapta la respuesta de departamentos del backend
+ */
+export const adaptBackendDepartmentsResponse = (backendResponse: any): Department[] => {
+  if (!backendResponse.success || !backendResponse.data) {
+    console.warn('Invalid departments response format:', backendResponse);
+    return [];
+  }
+  
+  // La respuesta del backend tiene la estructura: { data: { departamentos: [...], pagination: {...} } }
+  const departamentos = backendResponse.data.departamentos || backendResponse.data;
+  
+  if (!Array.isArray(departamentos)) {
+    console.warn('Departamentos is not an array:', departamentos);
+    return [];
+  }
+  
+  return departamentos.map(adaptBackendDepartment);
+};
+
+/**
+ * Calcula la carga actual de un equipo basándose en las tareas asignadas
+ */
+export const calculateTeamCurrentLoad = (tasks: Task[], teamId: number): number => {
+  const teamTasks = tasks.filter(task => 
+    task.team === teamId && 
+    (task.status === TaskStatus.TODO || task.status === TaskStatus.DOING)
+  );
+  
+  return teamTasks.reduce((totalLoad, task) => {
+    return totalLoad + (task.loadFactor || 1);
+  }, 0);
+};
+
+/**
+ * Actualiza la carga actual de los equipos basándose en las tareas
+ */
+export const updateTeamsWithCurrentLoad = (teams: Team[], tasks: Task[]): Team[] => {
+  return teams.map(team => ({
+    ...team,
+    currentLoad: calculateTeamCurrentLoad(tasks, team.id)
+  }));
+};
+
+// Cache para equipos y departamentos
+let teamsCache: Team[] = [];
+let departmentsCache: Department[] = [];
+let teamsCacheTime = 0;
+let departmentsCacheTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+/**
+ * Obtiene el nombre de un equipo por ID (con cache)
+ */
+export const getTeamNameById = async (teamId: number): Promise<string> => {
+  try {
+    // Verificar cache
+    const now = Date.now();
+    if (teamsCache.length === 0 || (now - teamsCacheTime) > CACHE_DURATION) {
+      const { teamService } = await import('./api');
+      const response = await teamService.getTeams();
+      teamsCache = adaptBackendTeamsResponse(response);
+      teamsCacheTime = now;
+    }
+
+    const team = teamsCache.find(t => t.id === teamId);
+    return team?.name || 'Sin Equipo';
+  } catch (error) {
+    console.error('Error getting team name:', error);
+    return 'Sin Equipo';
+  }
+};
+
+/**
+ * Obtiene el nombre de un departamento por ID (con cache)
+ */
+export const getDepartmentNameById = async (departmentId: number): Promise<string> => {
+  try {
+    // Verificar cache
+    const now = Date.now();
+    if (departmentsCache.length === 0 || (now - departmentsCacheTime) > CACHE_DURATION) {
+      const { departmentService } = await import('./api');
+      const response = await departmentService.getDepartments();
+      departmentsCache = adaptBackendDepartmentsResponse(response);
+      departmentsCacheTime = now;
+    }
+
+    const department = departmentsCache.find(d => d.id === departmentId);
+    return department?.name || 'Sin Departamento';
+  } catch (error) {
+    console.error('Error getting department name:', error);
+    return 'Sin Departamento';
+  }
+};
+
+/**
+ * Obtiene un equipo por ID (con cache)
+ */
+export const getTeamById = async (teamId: number): Promise<Team | null> => {
+  try {
+    // Verificar cache
+    const now = Date.now();
+    if (teamsCache.length === 0 || (now - teamsCacheTime) > CACHE_DURATION) {
+      const { teamService } = await import('./api');
+      const response = await teamService.getTeams();
+      teamsCache = adaptBackendTeamsResponse(response);
+      teamsCacheTime = now;
+    }
+
+    return teamsCache.find(t => t.id === teamId) || null;
+  } catch (error) {
+    console.error('Error getting team:', error);
+    return null;
+  }
+};
+
+/**
+ * Obtiene un departamento por ID (con cache)
+ */
+export const getDepartmentById = async (departmentId: number): Promise<Department | null> => {
+  try {
+    // Verificar cache
+    const now = Date.now();
+    if (departmentsCache.length === 0 || (now - departmentsCacheTime) > CACHE_DURATION) {
+      const { departmentService } = await import('./api');
+      const response = await departmentService.getDepartments();
+      departmentsCache = adaptBackendDepartmentsResponse(response);
+      departmentsCacheTime = now;
+    }
+
+    return departmentsCache.find(d => d.id === departmentId) || null;
+  } catch (error) {
+    console.error('Error getting department:', error);
+    return null;
+  }
+};
+
+/**
+ * Limpia el cache de equipos y departamentos
+ */
+export const clearTeamsAndDepartmentsCache = () => {
+  teamsCache = [];
+  departmentsCache = [];
+  teamsCacheTime = 0;
+  departmentsCacheTime = 0;
+};
+
+/**
+ * Obtiene todos los equipos con carga actual calculada
+ */
+export const getAllTeamsWithCurrentLoad = async (): Promise<Team[]> => {
+  try {
+    const { teamService } = await import('./api');
+    const { getTasksWithStage } = await import('./mockData/tasks');
+    
+    const [teamsResponse, tasks] = await Promise.all([
+      teamService.getTeams(),
+      Promise.resolve(getTasksWithStage())
+    ]);
+
+    const teams = adaptBackendTeamsResponse(teamsResponse);
+    return updateTeamsWithCurrentLoad(teams, tasks);
+  } catch (error) {
+    console.error('Error getting teams with current load:', error);
+    return [];
+  }
 }; 

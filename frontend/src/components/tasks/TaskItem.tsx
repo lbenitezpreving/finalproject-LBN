@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -13,8 +13,7 @@ import {
   faEye
 } from '@fortawesome/free-solid-svg-icons';
 import { Task, TaskStatus } from '../../types';
-import { getDepartmentName } from '../../services/mockData/departments';
-import { getTeamName } from '../../services/mockData/teams';
+import { getDepartmentNameById, getTeamNameById } from '../../services/dataAdapters';
 import { getUserName } from '../../services/mockData/users';
 
 interface TaskItemProps {
@@ -24,6 +23,24 @@ interface TaskItemProps {
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => {
+  const [departmentName, setDepartmentName] = useState<string>('Cargando...');
+  const [teamName, setTeamName] = useState<string>('Cargando...');
+
+  useEffect(() => {
+    // Cargar nombre del departamento
+    getDepartmentNameById(task.department)
+      .then(name => setDepartmentName(name))
+      .catch(() => setDepartmentName('Error'));
+
+    // Cargar nombre del equipo si existe
+    if (task.team) {
+      getTeamNameById(task.team)
+        .then(name => setTeamName(name))
+        .catch(() => setTeamName('Error'));
+    } else {
+      setTeamName('Sin asignar');
+    }
+  }, [task.department, task.team]);
   
   const getStatusColor = (status: TaskStatus): string => {
     switch (status) {
@@ -100,7 +117,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
         <div>
           <strong>#{task.id}</strong>
           <div className="text-muted small">
-            {getDepartmentName(task.department)}
+            {departmentName}
           </div>
         </div>
       </td>
@@ -133,7 +150,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
         <div className="d-flex align-items-center">
           <FontAwesomeIcon icon={faUsers} className="me-1 text-muted" />
           <span className="small">
-            {task.team ? getTeamName(task.team) : 'Sin asignar'}
+            {teamName}
           </span>
         </div>
       </td>

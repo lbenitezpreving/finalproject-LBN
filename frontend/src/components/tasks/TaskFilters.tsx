@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Row, Col } from 'react-bootstrap';
-import { TaskFilters, TaskStatus, UserRole } from '../../types';
-import { mockDepartments } from '../../services/mockData/departments';
-import { mockTeams } from '../../services/mockData/teams';
+import { TaskFilters as ITaskFilters, TaskStatus, UserRole, Team, Department } from '../../types';
+import { teamService, departmentService } from '../../services/api';
+import { adaptBackendTeamsResponse, adaptBackendDepartmentsResponse } from '../../services/dataAdapters';
 import { mockUsers } from '../../services/mockData/users';
 
 interface TaskFiltersProps {
-  filters: TaskFilters;
-  onChange: (filters: TaskFilters) => void;
+  filters: ITaskFilters;
+  onChange: (filters: ITaskFilters) => void;
   userRole?: UserRole;
   userDepartment?: number;
 }
@@ -18,8 +18,39 @@ const TaskFiltersComponent: React.FC<TaskFiltersProps> = ({
   userRole,
   userDepartment
 }) => {
-  
-  const handleFilterChange = (field: keyof TaskFilters, value: any) => {
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    loadOptions();
+  }, []);
+
+  const loadOptions = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const [departmentsResponse, teamsResponse] = await Promise.all([
+        departmentService.getDepartments(),
+        teamService.getTeams()
+      ]);
+
+      const departmentsData = adaptBackendDepartmentsResponse(departmentsResponse);
+      const teamsData = adaptBackendTeamsResponse(teamsResponse);
+
+      setDepartments(departmentsData);
+      setTeams(teamsData);
+    } catch (error) {
+      console.error('Error loading filter options:', error);
+      setError('Error al cargar opciones de filtros');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (field: keyof ITaskFilters, value: any) => {
     onChange({
       ...filters,
       [field]: value === '' ? undefined : value
@@ -35,8 +66,8 @@ const TaskFiltersComponent: React.FC<TaskFiltersProps> = ({
   
   // Filtrar departamentos según el rol del usuario
   const availableDepartments = userRole === UserRole.NEGOCIO && userDepartment
-    ? mockDepartments.filter(dept => dept.id === userDepartment)
-    : mockDepartments;
+    ? departments.filter(dept => dept.id === userDepartment)
+    : departments;
   
   // Filtrar usuarios según el rol
   const availableUsers = userRole === UserRole.NEGOCIO && userDepartment
@@ -57,14 +88,21 @@ const TaskFiltersComponent: React.FC<TaskFiltersProps> = ({
             <Form.Select
               value={filters.department || ''}
               onChange={(e) => handleFilterChange('department', parseInt(e.target.value) || undefined)}
+              disabled={loading}
             >
-              <option value="">Todos los departamentos</option>
+              <option value="">
+                {loading ? 'Cargando departamentos...' : 'Todos los departamentos'}
+              </option>
+              {!loading && availableDepartments.length === 0 && (
+                <option value="" disabled>No hay departamentos disponibles</option>
+              )}
               {availableDepartments.map(dept => (
                 <option key={dept.id} value={dept.id}>
                   {dept.name}
                 </option>
               ))}
             </Form.Select>
+            {error && <Form.Text className="text-danger">{error}</Form.Text>}
           </Form.Group>
         </Col>
         
@@ -125,14 +163,21 @@ const TaskFiltersComponent: React.FC<TaskFiltersProps> = ({
             <Form.Select
               value={filters.team || ''}
               onChange={(e) => handleFilterChange('team', parseInt(e.target.value) || undefined)}
+              disabled={loading}
             >
-              <option value="">Todos los equipos</option>
-              {mockTeams.map(team => (
+              <option value="">
+                {loading ? 'Cargando equipos...' : 'Todos los equipos'}
+              </option>
+              {!loading && teams.length === 0 && (
+                <option value="" disabled>No hay equipos disponibles</option>
+              )}
+              {teams.map(team => (
                 <option key={team.id} value={team.id}>
                   {team.name} {team.isExternal ? '(Externo)' : '(Interno)'}
                 </option>
               ))}
             </Form.Select>
+            {error && <Form.Text className="text-danger">{error}</Form.Text>}
           </Form.Group>
         </Col>
         

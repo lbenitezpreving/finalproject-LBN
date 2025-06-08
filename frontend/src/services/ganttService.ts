@@ -1,9 +1,14 @@
 import { Task, TaskStatus, Department, Team } from '../types';
 import { TaskService } from './taskService';
 import { getTasksWithStage } from './mockData/tasks';
-import { getAllTeamsWithCurrentLoad } from './mockData/teams';
-import { mockDepartments } from './mockData/departments';
-import { mockTeams } from './mockData/teams';
+import { teamService, departmentService } from './api';
+import { 
+  adaptBackendTeamsResponse, 
+  adaptBackendDepartmentsResponse,
+  updateTeamsWithCurrentLoad,
+  getTeamNameById,
+  getDepartmentNameById
+} from './dataAdapters';
 
 // Interfaz para representar una tarea en el Gantt
 export interface GanttTask {
@@ -90,17 +95,14 @@ const calculateProgress = (task: Task): number => {
 };
 
 // Función para obtener el nombre del departamento
-const getDepartmentName = (departmentId: number): string => {
-  const department = mockDepartments.find(d => d.id === departmentId);
-  return department?.name || 'Sin Departamento';
+const getDepartmentName = async (departmentId: number): Promise<string> => {
+  return await getDepartmentNameById(departmentId);
 };
 
 // Función para obtener el nombre del equipo
-const getTeamName = (teamId?: number): string => {
+const getTeamName = async (teamId?: number): Promise<string> => {
   if (!teamId) return 'Sin Equipo';
-  const teams = getAllTeamsWithCurrentLoad();
-  const team = teams.find(t => t.id === teamId);
-  return team?.name || 'Sin Equipo';
+  return await getTeamNameById(teamId);
 };
 
 export class GanttService {
@@ -154,19 +156,28 @@ export class GanttService {
       }
     }
     
-    // Convertir a formato Gantt
-    const ganttTasks: GanttTask[] = filteredTasks.map(task => ({
-      id: task.id.toString(),
-      name: task.subject,
-      start: formatDateForGantt(task.startDate!),
-      end: formatDateForGantt(task.endDate!),
-      progress: calculateProgress(task),
-      custom_class: getTaskClass(task),
-      team: getTeamName(task.team),
-      department: getDepartmentName(task.department),
-      priority: task.priority,
-      loadFactor: task.loadFactor
-    }));
+    // Convertir a formato Gantt con resolución de nombres async
+    const ganttTasksPromises = filteredTasks.map(async (task) => {
+      const [teamName, departmentName] = await Promise.all([
+        getTeamName(task.team),
+        getDepartmentName(task.department)
+      ]);
+
+      return {
+        id: task.id.toString(),
+        name: task.subject,
+        start: formatDateForGantt(task.startDate!),
+        end: formatDateForGantt(task.endDate!),
+        progress: calculateProgress(task),
+        custom_class: getTaskClass(task),
+        team: teamName,
+        department: departmentName,
+        priority: task.priority,
+        loadFactor: task.loadFactor
+      };
+    });
+
+    const ganttTasks = await Promise.all(ganttTasksPromises);
     
     // Ordenar por fecha de inicio
     ganttTasks.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
@@ -237,19 +248,48 @@ export class GanttService {
     teams: Team[];
     statuses: { value: TaskStatus; label: string }[];
   }> {
-    const teams = getAllTeamsWithCurrentLoad();
-    
-    const statuses = [
-      { value: TaskStatus.TODO, label: 'Planificada' },
-      { value: TaskStatus.DOING, label: 'En Progreso' },
-      { value: TaskStatus.DEMO, label: 'En Demo' },
-      { value: TaskStatus.DONE, label: 'Completada' }
-    ];
-    
-    return {
-      departments: mockDepartments,
-      teams: teams,
-      statuses: statuses
-    };
+    try {
+      // Obtener datos reales de equipos y departamentos
+      const [teamsResponse, departmentsResponse] = await Promise.all([
+        teamService.getTeams(),
+        departmentService.getDepartments()
+      ]);
+
+      const teams = adaptBackendTeamsResponse(teamsResponse);
+      const departments = adaptBackendDepartmentsResponse(departmentsResponse);
+      
+      // Calcular carga actual de equipos
+      const tasksWithStage = getTasksWithStage();
+      const teamsWithLoad = updateTeamsWithCurrentLoad(teams, tasksWithStage);
+      
+      const statuses = [
+        { value: TaskStatus.TODO, label: 'Planificada' },
+        { value: TaskStatus.DOING, label: 'En Progreso' },
+        { value: TaskStatus.DEMO, label: 'En Demo' },
+        { value: TaskStatus.DONE, label: 'Completada' }
+      ];
+
+      return {
+        departments: departments,
+        teams: teamsWithLoad,
+        statuses: statuses
+      };
+    } catch (error) {
+      console.error('Error getting filter options:', error);
+      
+      // Fallback básico en caso de error
+      const statuses = [
+        { value: TaskStatus.TODO, label: 'Planificada' },
+        { value: TaskStatus.DOING, label: 'En Progreso' },
+        { value: TaskStatus.DEMO, label: 'En Demo' },
+        { value: TaskStatus.DONE, label: 'Completada' }
+      ];
+
+      return {
+        departments: [],
+        teams: [],
+        statuses: statuses
+      };
+    }
   }
 } 

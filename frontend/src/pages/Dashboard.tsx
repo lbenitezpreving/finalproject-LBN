@@ -39,8 +39,9 @@ const Dashboard: React.FC = () => {
         // Cargar fechas límite próximas (aún desde mock)
         setUpcomingDeadlines(getUpcomingDeadlines());
         
-        // Cargar equipos con alta carga (aún desde mock)
-        setHighLoadTeams(getHighLoadTeams());
+        // Cargar equipos con alta carga
+        const highLoadTeamsData = await getHighLoadTeams();
+        setHighLoadTeams(highLoadTeamsData);
         
       } catch (error) {
         console.error('Error loading dashboard data:', error);
