@@ -34,17 +34,23 @@ const TaskList: React.FC = () => {
   useEffect(() => {
     const urlFilters = getFiltersFromUrl();
     setFilters(urlFilters);
-  }, [getFiltersFromUrl]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo al montar
   
   // Función para cargar tareas
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async (customPagination?: { page: number; pageSize: number }) => {
     try {
       setLoading(true);
       setError(null);
 
+      const paginationToUse = customPagination || { 
+        page: pagination?.currentPage || 1, 
+        pageSize: pagination?.pageSize || 20 
+      };
+
       const result = await TaskService.getTasks(
         filters,
-        { page: 1, pageSize: 20 },
+        paginationToUse,
         undefined, // search
         sort,
         user?.role,
@@ -59,12 +65,12 @@ const TaskList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, sort, user?.role, user?.department, pagination?.currentPage, pagination?.pageSize]);
   
-  // Cargar tareas cuando cambien los filtros, paginación o ordenamiento
+  // Cargar tareas cuando cambien los filtros o ordenamiento
   useEffect(() => {
     loadTasks();
-  }, [loadTasks]);
+  }, [filters, sort, user?.role, user?.department]);
   
   // Manejar click en tarea para estimación
   const handleEstimateTask = useCallback((task: Task) => {
@@ -86,7 +92,7 @@ const TaskList: React.FC = () => {
     } catch (error) {
       throw error; // Re-lanzar para que el modal pueda manejar el error
     }
-  }, []);
+  }, [loadTasks]);
 
   // Cerrar modal de estimación
   const handleCloseEstimationModal = useCallback(() => {
@@ -122,13 +128,9 @@ const TaskList: React.FC = () => {
   
   // Manejar cambio de página
   const handlePageChange = useCallback((page: number) => {
-    setPagination(prev => prev ? { 
-      currentPage: page, 
-      pageSize: prev.pageSize, 
-      totalItems: prev.totalItems, 
-      totalPages: prev.totalPages 
-    } : null);
-  }, []);
+    const pageSize = pagination?.pageSize || 20;
+    loadTasks({ page, pageSize });
+  }, [loadTasks, pagination?.pageSize]);
   
   // Manejar cambio de ordenamiento
   const handleSortChange = useCallback((field: string) => {
