@@ -130,6 +130,12 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
+                  "pm.test('Response has token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.globals.set('negocioToken', jsonData.data.token);",
+                  "});",
+                  "",
                   "pm.test('User role is NEGOCIO', function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.data.user.role).to.eql('NEGOCIO');",
@@ -169,6 +175,12 @@
                 "exec": [
                   "pm.test('Status code is 200', function () {",
                   "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('token');",
+                  "    pm.globals.set('authToken', jsonData.data.token);",
                   "});",
                   "",
                   "pm.test('User role is TECNOLOGIA', function () {",
@@ -710,6 +722,351 @@
       ]
     },
     {
+      "name": "Estimación de Tareas (US-05)",
+      "item": [
+        {
+          "name": "Actualizar Estimación - Éxito",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimacion_sprints\": 3,\n  \"factor_carga\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/10001/estimation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "10001", "estimation"]
+            },
+            "description": "Actualizar estimación de una tarea (solo usuarios TECNOLOGIA pueden realizar esta acción)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success property', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response has updated task data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('estimacion_sprints');",
+                  "    pm.expect(jsonData.data).to.have.property('factor_carga');",
+                  "});",
+                  "",
+                  "pm.test('Estimation values are updated', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.estimacion_sprints).to.eql(3);",
+                  "    pm.expect(jsonData.data.factor_carga).to.eql(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar Estimación - Valores Decimales",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimacion_sprints\": 2.5,\n  \"factor_carga\": 1.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/10002/estimation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "10002", "estimation"]
+            },
+            "description": "Actualizar estimación con valores decimales (ejemplo: 2.5 sprints, 1.5 factor de carga)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Decimal values are accepted', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.estimacion_sprints).to.eql(2.5);",
+                  "    pm.expect(jsonData.data.factor_carga).to.eql(1.5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar Estimación - Tarea No Encontrada",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimacion_sprints\": 3,\n  \"factor_carga\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/999999/estimation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "999999", "estimation"]
+            },
+            "description": "Probar actualización de estimación en tarea inexistente"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message is correct', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "    pm.expect(jsonData.message).to.include('no encontrada');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar Estimación - Datos Inválidos",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimacion_sprints\": -1,\n  \"factor_carga\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/10001/estimation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "10001", "estimation"]
+            },
+            "description": "Probar validaciones con datos fuera de rango (sprints negativo, factor > 20)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation error message', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "    pm.expect(jsonData.message).to.include('debe estar entre');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar Estimación - Campos Faltantes",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimacion_sprints\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/10001/estimation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "10001", "estimation"]
+            },
+            "description": "Probar validación cuando faltan campos obligatorios"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Missing field error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "    pm.expect(jsonData.message).to.include('obligatorios');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar Estimación - Sin Autenticación",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimacion_sprints\": 3,\n  \"factor_carga\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/10001/estimation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "10001", "estimation"]
+            },
+            "description": "Probar acceso sin token de autenticación"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Authentication required error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar Estimación - Usuario NEGOCIO (Sin Permisos)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{negocioToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estimacion_sprints\": 3,\n  \"factor_carga\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/10001/estimation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "10001", "estimation"]
+            },
+            "description": "Probar acceso con usuario de NEGOCIO (debe fallar - solo TECNOLOGIA puede estimar)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Nota: Ejecutar primero 'Login - Negocio' para obtener negocioToken",
+                  "console.log('Probando acceso con usuario NEGOCIO - debe retornar 403');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Permission denied error', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "    pm.expect(jsonData.message).to.include('permisos');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Documentación",
       "item": [
         {
@@ -737,6 +1094,11 @@
     },
     {
       "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "negocioToken",
       "value": "",
       "type": "string"
     }

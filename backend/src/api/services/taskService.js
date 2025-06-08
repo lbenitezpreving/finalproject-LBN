@@ -494,9 +494,122 @@ const getTaskById = async (taskId) => {
   }
 };
 
+/**
+ * Actualiza la estimación de una tarea en TaskDistributor
+ * @param {number} taskId - ID de la tarea en Redmine
+ * @param {number} estimacionSprints - Estimación en sprints
+ * @param {number} factorCarga - Factor de carga de trabajo
+ * @param {Object} user - Usuario autenticado
+ * @returns {Promise<Object>} Tarea actualizada con información extendida
+ */
+const updateTaskEstimation = async (taskId, estimacionSprints, factorCarga, user) => {
+  try {
+    // 1. Verificar que el usuario tenga permisos (solo TECNOLOGIA)
+    if (user.role !== 'TECNOLOGIA') {
+      throw new Error('Sin permisos: solo usuarios de tecnología pueden estimar tareas');
+    }
+
+    // 2. Verificar que la tarea existe en Redmine
+    const redmineResponse = await redmineService.getIssue(taskId);
+    if (!redmineResponse.issue) {
+      throw new Error('Tarea no encontrada');
+    }
+
+    const redmineTask = redmineResponse.issue;
+
+    // 3. Verificar que la tarea está en estado correcto para estimación
+    // Solo tareas con estado "Nuevo" (ID 1) pueden ser estimadas
+    if (redmineTask.status.id !== 1) {
+      throw new Error(`La tarea no se puede estimar en su estado actual: ${redmineTask.status.name}. Solo se pueden estimar tareas en estado "Nuevo"`);
+    }
+
+    // 4. Buscar o crear registro extendido
+    let extendedTask = await prisma.tareaExtended.findUnique({
+      where: {
+        redmineTaskId: taskId
+      },
+      include: {
+        asignaciones: {
+          include: {
+            equipo: true
+          },
+          orderBy: {
+            fechaAsignacion: 'desc'
+          },
+          take: 1
+        }
+      }
+    });
+
+    if (!extendedTask) {
+      // Crear registro extendido si no existe
+      extendedTask = await prisma.tareaExtended.create({
+        data: {
+          redmineTaskId: taskId,
+          ordenPrioridad: null,
+          factorCarga: factorCarga,
+          estimacionSprints: estimacionSprints,
+          fechaInicioPlanificada: null,
+          fechaFinPlanificada: null
+        },
+        include: {
+          asignaciones: {
+            include: {
+              equipo: true
+            },
+            orderBy: {
+              fechaAsignacion: 'desc'
+            },
+            take: 1
+          }
+        }
+      });
+    } else {
+      // Actualizar registro existente
+      extendedTask = await prisma.tareaExtended.update({
+        where: {
+          id: extendedTask.id
+        },
+        data: {
+          factorCarga: factorCarga,
+          estimacionSprints: estimacionSprints
+        },
+        include: {
+          asignaciones: {
+            include: {
+              equipo: true
+            },
+            orderBy: {
+              fechaAsignacion: 'desc'
+            },
+            take: 1
+          }
+        }
+      });
+    }
+
+    // 5. Combinar datos de Redmine con TaskDistributor
+    const combinedTasks = await combineTasksWithExtendedData([redmineTask]);
+    
+    if (combinedTasks.length === 0) {
+      throw new Error('Error al combinar datos de la tarea');
+    }
+
+    return {
+      success: true,
+      data: combinedTasks[0]
+    };
+
+  } catch (error) {
+    console.error('Error al actualizar estimación de tarea:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   getTasksWithFilters,
   getTaskById,
+  updateTaskEstimation,
   combineTasksWithExtendedData,
   applyTextSearch,
   applySorting,

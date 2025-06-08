@@ -45,6 +45,11 @@ const authenticate = async (req, res, next) => {
 
     // Agregar usuario al request
     req.user = user;
+    console.log('🔑 Usuario autenticado:', {
+      id: user.id,
+      email: user.email,
+      role: user.role
+    });
     next();
   } catch (error) {
     console.error('Error en autenticación:', error);
@@ -57,11 +62,21 @@ const authenticate = async (req, res, next) => {
 
 /**
  * Middleware para verificar roles específicos
- * @param {...string} allowedRoles - Roles permitidos
+ * @param {...string|Array} allowedRoles - Roles permitidos
  * @returns {Function} Middleware function
  */
 const authorize = (...allowedRoles) => {
   return (req, res, next) => {
+    // Aplanar el array en caso de que se pase un array como primer argumento
+    const flattenedRoles = allowedRoles.flat();
+    
+    console.log('🔍 Authorize Debug:', {
+      userExists: !!req.user,
+      userRole: req.user?.role,
+      allowedRoles: flattenedRoles,
+      hasPermission: req.user ? flattenedRoles.includes(req.user.role) : false
+    });
+
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -69,13 +84,18 @@ const authorize = (...allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!flattenedRoles.includes(req.user.role)) {
+      console.log('❌ 403 Error - Rol no permitido:', {
+        userRole: req.user.role,
+        allowedRoles: flattenedRoles
+      });
       return res.status(403).json({
         success: false,
         message: 'No tienes permisos para acceder a este recurso'
       });
     }
 
+    console.log('✅ Autorización exitosa');
     next();
   };
 };

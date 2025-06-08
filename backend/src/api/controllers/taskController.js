@@ -306,9 +306,100 @@ const getFilterOptions = async (req, res) => {
   }
 };
 
+/**
+ * Actualizar estimación de una tarea
+ * PUT /api/tasks/:id/estimation
+ * 
+ * Solo usuarios con rol TECNOLOGIA pueden estimar tareas
+ * Solo tareas en estado "Nuevo" (backlog) pueden ser estimadas
+ */
+const updateTaskEstimation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estimacion_sprints, factor_carga } = req.body;
+
+    // Validar ID
+    const taskId = parseInt(id);
+    if (isNaN(taskId) || taskId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de tarea inválido'
+      });
+    }
+
+    // Validar datos de entrada
+    if (!estimacion_sprints || !factor_carga) {
+      return res.status(400).json({
+        success: false,
+        message: 'Los campos estimacion_sprints y factor_carga son obligatorios'
+      });
+    }
+
+    // Validar rangos
+    if (estimacion_sprints < 0.5 || estimacion_sprints > 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'La estimación en sprints debe estar entre 0.5 y 50'
+      });
+    }
+
+    if (factor_carga < 0.5 || factor_carga > 20) {
+      return res.status(400).json({
+        success: false,
+        message: 'El factor de carga debe estar entre 0.5 y 20'
+      });
+    }
+
+    // Actualizar estimación
+    const result = await taskService.updateTaskEstimation(
+      taskId,
+      parseFloat(estimacion_sprints),
+      parseFloat(factor_carga),
+      req.user
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Estimación actualizada correctamente',
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Error en updateTaskEstimation:', error);
+
+    if (error.message === 'Tarea no encontrada') {
+      return res.status(404).json({
+        success: false,
+        message: 'Tarea no encontrada'
+      });
+    }
+
+    if (error.message.includes('no se puede estimar')) {
+      return res.status(422).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    if (error.message.includes('Sin permisos')) {
+      return res.status(403).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor al actualizar la estimación',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   getTasks,
   getTaskById,
   getTaskStats,
   getFilterOptions,
+  updateTaskEstimation
 }; 

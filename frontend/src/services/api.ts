@@ -74,6 +74,11 @@ export const taskService = {
     return response.data;
   },
 
+  updateTaskEstimation: async (id: number, estimationData: { estimacion_sprints: number; factor_carga: number }) => {
+    const response = await api.put(`/tasks/${id}/estimation`, estimationData);
+    return response.data;
+  },
+
   getRecommendations: async (taskId: number) => {
     const response = await api.get(`/tasks/${taskId}/recommendations`);
     return response.data;

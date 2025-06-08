@@ -17,7 +17,7 @@ import {
   adaptFiltersToBackend 
 } from './dataAdapters';
 // Fallback a mock data para funcionalidades no implementadas en backend
-import { mockTasks, getTasksWithStage, getTaskStage } from './mockData/tasks';
+import { getTasksWithStage, getTaskStage } from './mockData/tasks';
 import { getTeamById, getAllTeamsWithCurrentLoad } from './mockData/teams';
 import { getAffinityByTeamAndDepartment } from './mockData/affinityMatrix';
 import { getDepartmentById } from './mockData/departments';
@@ -347,108 +347,59 @@ export class TaskService {
     sprints: number,
     loadFactor: number
   ): Promise<Task & { stage: TaskStatus }> {
-    await delay(500); // Simular delay de red
-    
-    const taskIndex = mockTasks.findIndex(task => task.id === taskId);
-    
-    if (taskIndex === -1) {
-      throw new Error(`Tarea con ID ${taskId} no encontrada`);
+    try {
+      // Llamar al endpoint real del backend
+      const response = await taskService.updateTaskEstimation(taskId, {
+        estimacion_sprints: sprints,
+        factor_carga: loadFactor
+      });
+      
+      if (!response.success || !response.data) {
+        throw new Error('Error al actualizar la estimación');
+      }
+      
+      // Adaptar la respuesta del backend al formato del frontend
+      const backendTask = response.data;
+      const adaptedTask = adaptBackendTask(backendTask);
+      
+      return {
+        ...adaptedTask,
+        stage: adaptedTask.status // El status ya viene adaptado del backend
+      };
+      
+    } catch (error: any) {
+      console.error('Error updating task estimation:', error);
+      
+      // Manejar errores específicos del backend
+      const errorMessage = error?.response?.data?.message || error?.message || 'Error desconocido';
+      
+      if (errorMessage.includes('Sin permisos')) {
+        throw new Error('Sin permisos: solo usuarios de tecnología pueden estimar tareas');
+      }
+      
+      if (errorMessage.includes('no se puede estimar')) {
+        throw new Error(errorMessage);
+      }
+      
+      if (errorMessage.includes('Tarea no encontrada')) {
+        throw new Error(`Tarea con ID ${taskId} no encontrada`);
+      }
+      
+      throw new Error('Error al actualizar la estimación. Por favor, inténtelo de nuevo.');
     }
-    
-    const task = mockTasks[taskIndex];
-    
-    // Verificar que la tarea esté en estado correcto para estimación
-    const currentStage = getTaskStage(task);
-    if (currentStage !== TaskStatus.BACKLOG) {
-      throw new Error(`No se puede estimar la tarea en estado: ${currentStage}`);
-    }
-    
-    // Validar datos de entrada
-    if (!sprints || sprints <= 0) {
-      throw new Error('La estimación en sprints debe ser mayor a 0');
-    }
-    
-    if (!loadFactor || loadFactor <= 0) {
-      throw new Error('El factor de carga debe ser mayor a 0');
-    }
-    
-    // Actualizar la tarea
-    mockTasks[taskIndex] = {
-      ...task,
-      sprints,
-      loadFactor,
-      updatedAt: new Date()
-    };
-    
-    // Retornar la tarea actualizada con su stage
-    const updatedTask = mockTasks[taskIndex];
-    return {
-      ...updatedTask,
-      stage: getTaskStage(updatedTask)
-    };
   }
 
   /**
    * Obtener recomendaciones de equipos para una tarea
+   * TODO: Implementar cuando esté disponible el backend
    */
   static async getTeamRecommendations(taskId: number): Promise<TeamRecommendation[]> {
-    await delay(800); // Simular procesamiento
-
-    const task = mockTasks.find(t => t.id === taskId);
-    if (!task || !task.sprints || !task.loadFactor) {
-      throw new Error('Tarea no encontrada o sin estimación completa');
-    }
-
-    const plannedTasks = getTasksWithStage();
-    const teams = getAllTeamsWithCurrentLoad(); // Usar cargas dinámicas
-    const recommendations: TeamRecommendation[] = [];
-
-    for (const team of teams) {
-      // Calcular fechas posibles
-      const { possibleStartDate, possibleEndDate } = this.calculatePossibleDates(
-        team.id,
-        task.sprints,
-        task.loadFactor,
-        plannedTasks.map(t => ({ ...t, stage: getTaskStage(t) }))
-      );
-
-      // Obtener afinidad con el departamento
-      const affinity = getAffinityByTeamAndDepartment(team.id, task.department);
-
-      // Calcular capacidad disponible
-      const availableCapacity = Math.max(0, team.capacity - team.currentLoad);
-
-      // Obtener proyectos actuales del equipo
-      const currentProjects = getCurrentProjectsByTeamFromTasks(team.id);
-
-      // Calcular puntuación
-      const score = this.calculateRecommendationScore(
-        affinity,
-        availableCapacity,
-        team.capacity,
-        possibleStartDate,
-        team.isExternal
-      );
-
-      recommendations.push({
-        teamId: team.id,
-        teamName: team.name,
-        affinity,
-        currentLoad: team.currentLoad,
-        availableCapacity,
-        possibleStartDate,
-        possibleEndDate,
-        score,
-        currentProjects
-      });
-    }
-
-    // Ordenar por puntuación (mayor a menor)
-    return recommendations.sort((a, b) => b.score - a.score);
+    throw new Error('Funcionalidad de recomendaciones no implementada aún');
   }
 
   /**
    * Asignar equipo y fechas a una tarea
+   * TODO: Implementar cuando esté disponible el backend
    */
   static async assignTeamAndDates(
     taskId: number,
@@ -456,48 +407,7 @@ export class TaskService {
     startDate: Date,
     endDate: Date
   ): Promise<Task & { stage: TaskStatus }> {
-    await delay(600); // Simular procesamiento
-    
-    const taskIndex = mockTasks.findIndex(task => task.id === taskId);
-    
-    if (taskIndex === -1) {
-      throw new Error(`Tarea con ID ${taskId} no encontrada`);
-    }
-
-    const task = mockTasks[taskIndex];
-    
-    // Verificar que la tarea esté en estado correcto
-    const currentStage = getTaskStage(task);
-    if (currentStage !== TaskStatus.BACKLOG) {
-      throw new Error(`No se puede planificar la tarea en estado: ${currentStage}`);
-    }
-
-    // Verificar que el equipo existe
-    const team = getTeamById(teamId);
-    if (!team) {
-      throw new Error(`Equipo con ID ${teamId} no encontrado`);
-    }
-
-    // Validar fechas
-    if (endDate <= startDate) {
-      throw new Error('La fecha de fin debe ser posterior a la fecha de inicio');
-    }
-
-    // Actualizar la tarea
-    mockTasks[taskIndex] = {
-      ...task,
-      team: teamId,
-      startDate,
-      endDate,
-      updatedAt: new Date()
-    };
-    
-    // Retornar la tarea actualizada con su nuevo stage
-    const updatedTask = mockTasks[taskIndex];
-    return {
-      ...updatedTask,
-      stage: getTaskStage(updatedTask)
-    };
+    throw new Error('Funcionalidad de asignación no implementada aún');
   }
 
   /**

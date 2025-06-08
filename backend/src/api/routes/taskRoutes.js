@@ -391,4 +391,68 @@ router.get('/filter-options', authenticate, taskController.getFilterOptions);
  */
 router.get('/:id', authenticate, taskController.getTaskById);
 
+/**
+ * @swagger
+ * /api/tasks/{id}/estimation:
+ *   put:
+ *     summary: Actualizar estimación de una tarea (solo tecnología)
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID único de la tarea
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - estimacion_sprints
+ *               - factor_carga
+ *             properties:
+ *               estimacion_sprints:
+ *                 type: number
+ *                 minimum: 0.5
+ *                 maximum: 50
+ *                 description: Estimación en sprints (puede ser decimal)
+ *               factor_carga:
+ *                 type: number
+ *                 minimum: 0.5
+ *                 maximum: 20
+ *                 description: Factor de carga de trabajo
+ *     responses:
+ *       200:
+ *         description: Estimación actualizada correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Task'
+ *       400:
+ *         description: Datos de entrada inválidos
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Sin permisos (solo tecnología)
+ *       404:
+ *         description: Tarea no encontrada
+ *       422:
+ *         description: Tarea no se puede estimar en su estado actual
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.put('/:id/estimation', authenticate, authorize(['TECNOLOGIA']), taskController.updateTaskEstimation);
+
 module.exports = router; 
