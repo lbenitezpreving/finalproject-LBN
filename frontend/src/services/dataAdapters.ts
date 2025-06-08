@@ -59,6 +59,9 @@ export const adaptBackendTask = (backendTask: any): Task => {
     status,
     priority: backendTask.priority?.id || 1,
     assignedTo: backendTask.assigned_to?.id,
+    assignedToName: backendTask.assigned_to?.name || (backendTask.assigned_to?.firstname && backendTask.assigned_to?.lastname 
+      ? `${backendTask.assigned_to.firstname} ${backendTask.assigned_to.lastname}`.trim()
+      : undefined),
     functional: backendTask.funcional,
     department: getDepartmentIdFromName(backendTask.departamento),
     createdAt: new Date(backendTask.created_on || Date.now()),
@@ -205,9 +208,7 @@ export const adaptFiltersToBackend = (frontendFilters: any) => {
     }
   }
 
-  if (frontendFilters.assignedTo) {
-    backendFilters.assigned_to_id = frontendFilters.assignedTo;
-  }
+
 
   if (frontendFilters.team) {
     backendFilters.equipo_id = frontendFilters.team;

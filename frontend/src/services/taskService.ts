@@ -239,7 +239,6 @@ export class TaskService {
     return tasks.filter(task => {
       if (filters.department && task.department !== filters.department) return false;
       if (filters.status && task.status !== filters.status) return false;
-      if (filters.assignedTo && task.assignedTo !== filters.assignedTo) return false;
       if (filters.team && task.team !== filters.team) return false;
       if (filters.priority && task.priority !== filters.priority) return false;
               if (filters.status && task.status !== filters.status) return false;

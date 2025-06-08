@@ -32,6 +32,7 @@ export interface Task {
   status: TaskStatus;
   priority: number;
   assignedTo?: number; // ID del usuario responsable
+  assignedToName?: string; // Nombre del usuario responsable
   functional?: string; // Documento funcional
   department: number; // ID del departamento
   createdAt: Date;
@@ -116,7 +117,6 @@ export interface Alert {
 export interface TaskFilters {
   department?: number;
   status?: TaskStatus;
-  assignedTo?: number;
   team?: number;
   priority?: number;
   startDate?: Date;

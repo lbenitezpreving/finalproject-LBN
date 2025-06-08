@@ -3,7 +3,6 @@ import { Form, Row, Col } from 'react-bootstrap';
 import { TaskFilters as ITaskFilters, TaskStatus, UserRole, Team, Department } from '../../types';
 import { teamService, departmentService } from '../../services/api';
 import { adaptBackendTeamsResponse, adaptBackendDepartmentsResponse } from '../../services/dataAdapters';
-import { mockUsers } from '../../services/mockData/users';
 
 interface TaskFiltersProps {
   filters: ITaskFilters;
@@ -68,11 +67,6 @@ const TaskFiltersComponent: React.FC<TaskFiltersProps> = ({
   const availableDepartments = userRole === UserRole.NEGOCIO && userDepartment
     ? departments.filter(dept => dept.id === userDepartment)
     : departments;
-  
-  // Filtrar usuarios según el rol
-  const availableUsers = userRole === UserRole.NEGOCIO && userDepartment
-    ? mockUsers.filter(user => user.department === userDepartment || user.role === UserRole.TECNOLOGIA)
-    : mockUsers;
   
   const formatDateForInput = (date: Date | undefined): string => {
     if (!date) return '';
@@ -140,25 +134,6 @@ const TaskFiltersComponent: React.FC<TaskFiltersProps> = ({
         
         <Col md={3}>
           <Form.Group className="mb-3">
-            <Form.Label>Responsable</Form.Label>
-            <Form.Select
-              value={filters.assignedTo || ''}
-              onChange={(e) => handleFilterChange('assignedTo', parseInt(e.target.value) || undefined)}
-            >
-              <option value="">Todos los responsables</option>
-              {availableUsers.map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.name} ({user.role})
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
-        </Col>
-      </Row>
-      
-      <Row>
-        <Col md={4}>
-          <Form.Group className="mb-3">
             <Form.Label>Equipo</Form.Label>
             <Form.Select
               value={filters.team || ''}
@@ -180,7 +155,9 @@ const TaskFiltersComponent: React.FC<TaskFiltersProps> = ({
             {error && <Form.Text className="text-danger">{error}</Form.Text>}
           </Form.Group>
         </Col>
-        
+      </Row>
+      
+      <Row>
         <Col md={4}>
           <Form.Group className="mb-3">
             <Form.Label>Fecha de inicio (desde)</Form.Label>

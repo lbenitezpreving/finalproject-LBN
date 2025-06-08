@@ -14,7 +14,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Task, TaskStatus } from '../../types';
 import { getDepartmentNameById, getTeamNameById } from '../../services/dataAdapters';
-import { getUserName } from '../../services/mockData/users';
 
 interface TaskItemProps {
   task: Task;
@@ -141,7 +140,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
         <div className="d-flex align-items-center">
           <FontAwesomeIcon icon={faUser} className="me-1 text-muted" />
           <span className="small">
-            {task.assignedTo ? getUserName(task.assignedTo) : 'Sin asignar'}
+            {task.assignedToName || 'Sin asignar'}
           </span>
         </div>
       </td>

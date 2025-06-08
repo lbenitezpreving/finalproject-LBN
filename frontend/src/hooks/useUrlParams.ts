@@ -23,8 +23,7 @@ export const useUrlParams = () => {
     const priority = searchParams.get('priority');
     if (priority) filters.priority = parseInt(priority);
 
-    const assignedTo = searchParams.get('assignedTo');
-    if (assignedTo) filters.assignedTo = parseInt(assignedTo);
+
 
     const hasResponsible = searchParams.get('hasResponsible');
     if (hasResponsible === 'false') filters.hasResponsible = false;
@@ -55,7 +54,7 @@ export const useUrlParams = () => {
     if (filters.status) newParams.set('status', filters.status);
     if (filters.team) newParams.set('team', filters.team.toString());
     if (filters.priority) newParams.set('priority', filters.priority.toString());
-    if (filters.assignedTo) newParams.set('assignedTo', filters.assignedTo.toString());
+
     if (filters.hasResponsible !== undefined) newParams.set('hasResponsible', filters.hasResponsible.toString());
     if (filters.hasFunctional !== undefined) newParams.set('hasFunctional', filters.hasFunctional.toString());
     if (filters.hasEstimation !== undefined) newParams.set('hasEstimation', filters.hasEstimation.toString());
@@ -77,7 +76,7 @@ export const useUrlParams = () => {
     if (filters.status) count++;
     if (filters.team) count++;
     if (filters.priority) count++;
-    if (filters.assignedTo) count++;
+
     if (filters.hasResponsible !== undefined) count++;
     if (filters.hasFunctional !== undefined) count++;
     if (filters.hasEstimation !== undefined) count++;

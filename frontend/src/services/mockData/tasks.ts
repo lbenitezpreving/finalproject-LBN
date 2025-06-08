@@ -1,4 +1,5 @@
 import { Task, TaskStatus } from '../../types';
+import { getUserName } from './users';
 
 export const mockTasks: Task[] = [
   // Tareas en backlog
@@ -829,6 +830,7 @@ export const getTaskStage = (task: Task): TaskStatus => {
 export const getTasksWithStage = (): Task[] => {
   return mockTasks.map(task => ({
     ...task,
-    status: task.status || getTaskStage(task)
+    status: task.status || getTaskStage(task),
+    assignedToName: task.assignedTo ? getUserName(task.assignedTo) : undefined
   }));
 }; 
