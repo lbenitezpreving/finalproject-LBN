@@ -58,12 +58,14 @@ const TaskTable: React.FC<TaskTableProps> = ({
   };
 
   const canPlan = (task: Task): boolean => {
-    // Se puede planificar cuando está estimada pero sin asignar a equipo (To Do)
+    // Se puede planificar cuando está en Backlog y ya tiene estimación, o cuando está en To Do sin equipo
     return user?.role === UserRole.TECNOLOGIA && 
-           task.status === TaskStatus.TODO &&
-           !!task.sprints && 
-           !!task.loadFactor &&
-           !task.team; // Solo si no tiene equipo asignado aún
+           (
+             // Caso 1: En Backlog con estimación (puede asignar equipo)
+             (task.status === TaskStatus.BACKLOG && !!task.sprints && !!task.loadFactor) ||
+             // Caso 2: En To Do sin equipo asignado (puede reasignar equipo)
+             (task.status === TaskStatus.TODO && !!task.sprints && !!task.loadFactor && !task.team)
+           );
   };
 
   const canChangeStatus = (task: Task, newStatus: TaskStatus): boolean => {
