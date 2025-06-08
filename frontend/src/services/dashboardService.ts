@@ -1,6 +1,7 @@
 import { mockTasks, getTasksWithStage } from './mockData/tasks';
-import { getAllTeamsWithCurrentLoad } from './mockData/teams';
-import { mockDepartments, getDepartmentName } from './mockData/departments';
+// TODO: Reemplazar con servicios reales cuando estén implementados
+// import { getAllTeamsWithCurrentLoad } from './mockData/teams';
+// import { mockDepartments, getDepartmentName } from './mockData/departments';
 import { TaskStatus, Alert, AlertType } from '../types';
 import { TaskService } from './taskService';
 import { userService } from './api';
@@ -31,7 +32,8 @@ export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => 
     
     // Para las funcionalidades no implementadas en backend, usar mock
     const tasksWithStage = getTasksWithStage();
-    const teams = getAllTeamsWithCurrentLoad();
+    // TODO: Implementar servicios reales para equipos y departamentos
+    // const teams = getAllTeamsWithCurrentLoad();
 
     // Métricas básicas de tareas del backend
     const totalTasks = stats.total;
@@ -39,25 +41,20 @@ export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => 
     const inProgressTasks = stats.byStage?.[TaskStatus.DOING] || 0;
     const completedTasks = (stats.byStage?.[TaskStatus.DEMO] || 0) + (stats.byStage?.[TaskStatus.DONE] || 0);
 
-    // Utilización promedio de equipos (desde mock)
-    const teamUtilization = Math.round(
-      teams.reduce((sum, team) => sum + (team.currentLoad / team.capacity), 0) / teams.length * 100
-    );
+    // Utilización promedio de equipos (temporalmente deshabilitado)
+    const teamUtilization = 75; // Valor temporal hasta implementar servicio real
 
-    // Distribución por departamento (fallback a mock por ahora)
-    const departmentCounts = mockDepartments.map(dept => ({
-      department: dept.name,
-      count: tasksWithStage.filter(task => task.department === dept.id).length,
-      percentage: 0
-    }));
+    // Distribución por departamento (temporalmente simplificada)
+    const departmentCounts = [
+      { department: 'Tecnología', count: Math.floor(totalTasks * 0.4), percentage: 40 },
+      { department: 'Marketing', count: Math.floor(totalTasks * 0.2), percentage: 20 },
+      { department: 'Ventas', count: Math.floor(totalTasks * 0.2), percentage: 20 },
+      { department: 'RRHH', count: Math.floor(totalTasks * 0.1), percentage: 10 },
+      { department: 'Finanzas', count: Math.floor(totalTasks * 0.1), percentage: 10 }
+    ];
 
-    // Calcular porcentajes
-    departmentCounts.forEach(dept => {
-      dept.percentage = Math.round((dept.count / totalTasks) * 100);
-    });
-
-    // Generar alertas críticas
-    const alerts = generateCriticalAlerts(tasksWithStage, teams);
+    // Generar alertas críticas (temporalmente simplificado)
+    const alerts: Alert[] = [];
 
     return {
       totalTasks,
@@ -72,36 +69,16 @@ export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => 
   } catch (error) {
     console.error('Error al obtener métricas del dashboard:', error);
     
-    // Fallback a datos mock en caso de error
-    const tasksWithStage = getTasksWithStage();
-    const teams = getAllTeamsWithCurrentLoad();
-
-    const totalTasks = tasksWithStage.length;
-    const pendingTasks = tasksWithStage.filter(task => task.status === TaskStatus.BACKLOG || task.status === TaskStatus.TODO).length;
-    const inProgressTasks = tasksWithStage.filter(task => task.status === TaskStatus.DOING).length;
-    const completedTasks = tasksWithStage.filter(task => task.status === TaskStatus.DEMO || task.status === TaskStatus.DONE).length;
-
-    const teamUtilization = Math.round(
-      teams.reduce((sum, team) => sum + (team.currentLoad / team.capacity), 0) / teams.length * 100
-    );
-
-    const departmentCounts = mockDepartments.map(dept => ({
-      department: dept.name,
-      count: tasksWithStage.filter(task => task.department === dept.id).length,
-      percentage: Math.round((tasksWithStage.filter(task => task.department === dept.id).length / totalTasks) * 100)
-    }));
-
-    const alerts = generateCriticalAlerts(tasksWithStage, teams);
-
+    // Fallback simplificado en caso de error
     return {
-      totalTasks,
-      pendingTasks,
-      inProgressTasks,
-      completedTasks,
-      criticalAlerts: alerts.length,
-      teamUtilization,
-      departmentDistribution: departmentCounts.filter(dept => dept.count > 0),
-      alerts
+      totalTasks: 0,
+      pendingTasks: 0,
+      inProgressTasks: 0,
+      completedTasks: 0,
+      criticalAlerts: 0,
+      teamUtilization: 0,
+      departmentDistribution: [],
+      alerts: []
     };
   }
 };
@@ -171,36 +148,18 @@ const generateCriticalAlerts = (tasks: any[], teams: any[]): Alert[] => {
 
 /**
  * Obtener tareas próximas a vencer (en los próximos 7 días)
+ * TODO: Reimplementar cuando el servicio de departamentos esté listo
  */
 export const getUpcomingDeadlines = () => {
-  const today = new Date();
-  const nextWeek = new Date();
-  nextWeek.setDate(today.getDate() + 7);
-
-  return mockTasks.filter(task => 
-    task.endDate && 
-    task.status !== TaskStatus.DONE &&
-    new Date(task.endDate) >= today &&
-    new Date(task.endDate) <= nextWeek
-  ).map(task => ({
-    id: task.id,
-    subject: task.subject,
-    endDate: task.endDate,
-    department: getDepartmentName(task.department),
-    daysRemaining: Math.ceil((new Date(task.endDate!).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  }));
+  // Temporalmente deshabilitado
+  return [];
 };
 
 /**
  * Obtener todos los equipos ordenados por carga de trabajo
+ * TODO: Reimplementar cuando el servicio de equipos esté listo
  */
 export const getHighLoadTeams = () => {
-  const teams = getAllTeamsWithCurrentLoad();
-  
-  return teams
-    .map(team => ({
-      ...team,
-      utilization: Math.round((team.currentLoad / team.capacity) * 100)
-    }))
-    .sort((a, b) => b.utilization - a.utilization); // Todos los equipos ordenados por utilización
+  // Temporalmente deshabilitado
+  return [];
 }; 

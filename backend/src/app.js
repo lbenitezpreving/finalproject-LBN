@@ -11,6 +11,8 @@ const { specs, swaggerUi, swaggerConfig } = require('./config/swagger');
 const authRoutes = require('./api/routes/authRoutes');
 const taskRoutes = require('./api/routes/taskRoutes');
 const redmineRoutes = require('./api/routes/redmine.routes');
+const equipoRoutes = require('./api/routes/equipoRoutes');
+const departamentoRoutes = require('./api/routes/departamentoRoutes');
 
 // Importar configuración de base de datos
 const { disconnectDatabase } = require('./config/database');
@@ -100,6 +102,16 @@ app.get('/api', (req, res) => {
         projects: 'GET /api/redmine/projects',
         users: 'GET /api/redmine/users',
         sync: 'POST /api/redmine/sync'
+      },
+      equipos: {
+        list: 'GET /api/equipos',
+        detail: 'GET /api/equipos/:id',
+        stats: 'GET /api/equipos/stats'
+      },
+      departamentos: {
+        list: 'GET /api/departamentos',
+        detail: 'GET /api/departamentos/:id',
+        stats: 'GET /api/departamentos/stats'
       }
     }
   });
@@ -109,6 +121,8 @@ app.get('/api', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/redmine', redmineRoutes);
+app.use('/api/equipos', equipoRoutes);
+app.use('/api/departamentos', departamentoRoutes);
 
 // Middleware para rutas no encontradas
 app.use('*', (req, res) => {
