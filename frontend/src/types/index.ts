@@ -16,13 +16,13 @@ export interface User {
   updatedAt?: Date;
 }
 
-// Tipos para tareas - Estados unificados
+// Tipos para tareas - Estados unificados (coinciden con Redmine)
 export enum TaskStatus {
-  BACKLOG = 'backlog',
-  TODO = 'todo',
-  DOING = 'doing', 
-  DEMO = 'demo',
-  DONE = 'done'
+  BACKLOG = 'Backlog',
+  TODO = 'To Do',
+  DOING = 'Doing', 
+  DEMO = 'Demo',
+  DONE = 'Done'
 }
 
 export interface Task {

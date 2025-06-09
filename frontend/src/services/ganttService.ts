@@ -1,6 +1,5 @@
 import { Task, TaskStatus, Department, Team } from '../types';
 import { TaskService } from './taskService';
-import { getTasksWithStage } from './mockData/tasks';
 import { teamService, departmentService } from './api';
 import { 
   adaptBackendTeamsResponse, 
@@ -56,15 +55,15 @@ const getTaskClass = (task: Task): string => {
   }
 };
 
-// Función para calcular el progreso de una tarea
-const calculateProgress = (task: Task): number => {
-  if (!task.startDate || !task.endDate) {
+// Función para calcular el progreso de una tarea (versión para datos reales del backend)
+const calculateTaskProgress = (task: any): number => {
+  if (!task.fecha_inicio_planificada || !task.fecha_fin_planificada) {
     return 0;
   }
 
   const now = new Date();
-  const start = new Date(task.startDate);
-  const end = new Date(task.endDate);
+  const start = new Date(task.fecha_inicio_planificada);
+  const end = new Date(task.fecha_fin_planificada);
   
   // Si no ha empezado
   if (now < start) {
@@ -78,19 +77,34 @@ const calculateProgress = (task: Task): number => {
 
   // Calcular progreso basado en estado
   switch (task.status) {
-    case TaskStatus.DONE:
+    case 'Done':
       return 100;
-    case TaskStatus.DEMO:
+    case 'Demo':
       return 90;
-    case TaskStatus.DOING:
+    case 'Doing':
       // Calcular basado en tiempo transcurrido
       const totalTime = end.getTime() - start.getTime();
       const elapsed = now.getTime() - start.getTime();
       return Math.min(Math.round((elapsed / totalTime) * 100), 80); // Máximo 80% si está en progreso
-    case TaskStatus.TODO:
+    case 'To do':
       return 10; // Ha empezado pero no está en desarrollo activo
     default:
       return 0;
+  }
+};
+
+// Función para obtener el color/clase CSS según el estado de la tarea (versión para datos reales)
+const getTaskClassFromStatus = (status: string): string => {
+  switch (status) {
+    case 'To do':
+      return 'gantt-task-planned';
+    case 'Doing':
+      return 'gantt-task-progress';
+    case 'Demo':
+    case 'Done':
+      return 'gantt-task-completed';
+    default:
+      return 'gantt-task-backlog';
   }
 };
 
@@ -110,79 +124,96 @@ export class GanttService {
    * Obtener tareas formateadas para el Gantt
    */
   static async getGanttTasks(filters?: GanttFilters): Promise<GanttTask[]> {
-    // Obtener todas las tareas con stage
-    const allTasks = getTasksWithStage();
+    try {
+      // Construir filtros para el backend
+      const backendFilters: any = {};
+      
+      // Convertir filtros de Gantt a formato del backend
+      if (filters?.departments && filters.departments.length > 0) {
+        backendFilters.departamento = filters.departments[0]; // Por ahora tomar el primero
+      }
+      
+      if (filters?.status && filters.status.length > 0) {
+        // Mapear estados del enum a nombres esperados por el backend
+        const statusMapping: Record<TaskStatus, string> = {
+          [TaskStatus.BACKLOG]: 'Backlog',
+          [TaskStatus.TODO]: 'To do',
+          [TaskStatus.DOING]: 'Doing',
+          [TaskStatus.DEMO]: 'Demo', 
+          [TaskStatus.DONE]: 'Done'
+        };
+        backendFilters.status_id = statusMapping[filters.status[0]]; // Por ahora tomar el primero
+      }
+      
+             // Obtener tareas del backend con datos reales
+       const response = await TaskService.getTasks(
+         backendFilters,
+         { page: 1, pageSize: 50 } // paginación
+       );
+       
+       const allTasks = response.data || [];
+      
+      // Filtrar solo las tareas que tienen fechas de planificación (fecha_inicio_planificada y fecha_fin_planificada)
+      let filteredTasks = allTasks.filter((task: any) => 
+        task.fecha_inicio_planificada && 
+        task.fecha_fin_planificada && 
+        (task.status === 'To do' || 
+         task.status === 'Doing' || 
+         task.status === 'Demo' ||
+         task.status === 'Done')
+      );
+      
+      // Aplicar filtros adicionales de fecha si se proporcionan
+      if (filters?.startDate) {
+        filteredTasks = filteredTasks.filter((task: any) => 
+          new Date(task.fecha_fin_planificada) >= filters.startDate!
+        );
+      }
+      
+      if (filters?.endDate) {
+        filteredTasks = filteredTasks.filter((task: any) => 
+          new Date(task.fecha_inicio_planificada) <= filters.endDate!
+        );
+      }
+      
+             // Aplicar filtro de equipos
+       if (filters?.teams && filters.teams.length > 0) {
+         filteredTasks = filteredTasks.filter((task: any) => 
+           task.equipo_asignado && filters.teams!.includes(task.equipo_asignado.id)
+         );
+       }
     
-    // Filtrar solo las tareas que tienen fechas de inicio y fin (planificadas, en progreso o completadas)
-    let filteredTasks = allTasks.filter(task => 
-      task.startDate && 
-      task.endDate && 
-      (task.status === TaskStatus.TODO || 
-       task.status === TaskStatus.DOING || 
-       task.status === TaskStatus.DEMO ||
-       task.status === TaskStatus.DONE)
-    );
-    
-    // Aplicar filtros si se proporcionan
-    if (filters) {
-      if (filters.departments && filters.departments.length > 0) {
-        filteredTasks = filteredTasks.filter(task => 
-          filters.departments!.includes(task.department)
-        );
-      }
-      
-      if (filters.teams && filters.teams.length > 0) {
-        filteredTasks = filteredTasks.filter(task => 
-          task.team && filters.teams!.includes(task.team)
-        );
-      }
-      
-      if (filters.startDate) {
-        filteredTasks = filteredTasks.filter(task => 
-          task.endDate! >= filters.startDate!
-        );
-      }
-      
-      if (filters.endDate) {
-        filteredTasks = filteredTasks.filter(task => 
-          task.startDate! <= filters.endDate!
-        );
-      }
-      
-      if (filters.status && filters.status.length > 0) {
-        filteredTasks = filteredTasks.filter(task => 
-          filters.status!.includes(task.status)
-        );
-      }
-    }
-    
-    // Convertir a formato Gantt con resolución de nombres async
-    const ganttTasksPromises = filteredTasks.map(async (task) => {
-      const [teamName, departmentName] = await Promise.all([
-        getTeamName(task.team),
-        getDepartmentName(task.department)
-      ]);
+       // Convertir a formato Gantt con resolución de nombres async
+       const ganttTasksPromises = filteredTasks.map(async (task: any) => {
+         const [teamName, departmentName] = await Promise.all([
+           getTeamName(task.equipo_asignado?.id),
+           getDepartmentName(task.departamento_id)
+         ]);
 
-      return {
-        id: task.id.toString(),
-        name: task.subject,
-        start: formatDateForGantt(task.startDate!),
-        end: formatDateForGantt(task.endDate!),
-        progress: calculateProgress(task),
-        custom_class: getTaskClass(task),
-        team: teamName,
-        department: departmentName,
-        priority: task.priority,
-        loadFactor: task.loadFactor
-      };
-    });
+         return {
+           id: task.id.toString(),
+           name: task.subject,
+           start: formatDateForGantt(new Date(task.fecha_inicio_planificada)),
+           end: formatDateForGantt(new Date(task.fecha_fin_planificada)),
+           progress: calculateTaskProgress(task),
+           custom_class: getTaskClassFromStatus(task.status),
+           team: teamName,
+           department: departmentName,
+           priority: task.priority,
+           loadFactor: task.factor_carga
+         };
+       });
 
-    const ganttTasks = await Promise.all(ganttTasksPromises);
+       const ganttTasks = await Promise.all(ganttTasksPromises);
     
-    // Ordenar por fecha de inicio
-    ganttTasks.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+       // Ordenar por fecha de inicio
+       ganttTasks.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
     
-    return ganttTasks;
+       return ganttTasks;
+     } catch (error) {
+       console.error('Error loading Gantt tasks:', error);
+       return [];
+     }
   }
   
   /**
@@ -190,7 +221,7 @@ export class GanttService {
    */
   static async getGanttStats(filters?: GanttFilters): Promise<{
     totalTasks: number;
-    tasksByStatus: Record<TaskStatus, number>;
+    tasksByStatus: Record<string, number>;
     tasksByTeam: Record<string, number>;
     tasksByDepartment: Record<string, number>;
     timeRange: { start: Date; end: Date } | null;
@@ -200,14 +231,15 @@ export class GanttService {
     // Estadísticas básicas
     const stats = {
       totalTasks: tasks.length,
-      tasksByStatus: {} as Record<TaskStatus, number>,
+      tasksByStatus: {} as Record<string, number>,
       tasksByTeam: {} as Record<string, number>,
       tasksByDepartment: {} as Record<string, number>,
       timeRange: null as { start: Date; end: Date } | null
     };
     
-    // Inicializar contadores
-    Object.values(TaskStatus).forEach(status => {
+    // Inicializar contadores para los estados reales
+    const statusList = ['Backlog', 'To do', 'Doing', 'Demo', 'Done'];
+    statusList.forEach(status => {
       stats.tasksByStatus[status] = 0;
     });
     
@@ -258,8 +290,9 @@ export class GanttService {
       const teams = adaptBackendTeamsResponse(teamsResponse);
       const departments = adaptBackendDepartmentsResponse(departmentsResponse);
       
-      // Calcular carga actual de equipos
-      const tasksWithStage = getTasksWithStage();
+      // Obtener tareas reales para calcular carga de equipos
+      const tasksResponse = await TaskService.getTasks({}, { page: 1, pageSize: 100 });
+      const tasksWithStage = tasksResponse.data || [];
       const teamsWithLoad = updateTeamsWithCurrentLoad(teams, tasksWithStage);
       
       const statuses = [

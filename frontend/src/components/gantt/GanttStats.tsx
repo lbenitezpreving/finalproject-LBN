@@ -17,7 +17,7 @@ interface GanttStatsProps {
 
 interface StatsData {
   totalTasks: number;
-  tasksByStatus: Record<TaskStatus, number>;
+  tasksByStatus: Record<string, number>;
   tasksByTeam: Record<string, number>;
   tasksByDepartment: Record<string, number>;
   timeRange: { start: Date; end: Date } | null;
@@ -60,34 +60,34 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
     return `${startStr} - ${endStr}`;
   };
 
-  const getStatusLabel = (status: TaskStatus): string => {
+  const getStatusLabel = (status: string): string => {
     switch (status) {
-      case TaskStatus.BACKLOG:
+      case 'Backlog':
         return 'Backlog';
-      case TaskStatus.TODO:
+      case 'To do':
         return 'To Do';
-      case TaskStatus.DOING:
+      case 'Doing':
         return 'En Progreso';
-      case TaskStatus.DEMO:
+      case 'Demo':
         return 'Demo';
-      case TaskStatus.DONE:
+      case 'Done':
         return 'Completadas';
       default:
         return status;
     }
   };
 
-  const getStatusColor = (status: TaskStatus): string => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
-      case TaskStatus.BACKLOG:
+      case 'Backlog':
         return 'secondary';
-      case TaskStatus.TODO:
+      case 'To do':
         return 'warning';
-      case TaskStatus.DOING:
+      case 'Doing':
         return 'primary';
-      case TaskStatus.DEMO:
+      case 'Demo':
         return 'info';
-      case TaskStatus.DONE:
+      case 'Done':
         return 'success';
       default:
         return 'light';
@@ -206,15 +206,14 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
           <Card.Body>
             {Object.entries(stats.tasksByStatus).map(([status, count]) => {
               if (count === 0) return null;
-              const statusEnum = status as TaskStatus;
               return (
                 <div key={status} className="d-flex justify-content-between align-items-center mb-2">
                   <div className="d-flex align-items-center">
                     <div 
-                      className={`bg-${getStatusColor(statusEnum)} rounded me-2`}
+                      className={`bg-${getStatusColor(status)} rounded me-2`}
                       style={{ width: '12px', height: '12px' }}
                     ></div>
-                    <span className="small">{getStatusLabel(statusEnum)}</span>
+                    <span className="small">{getStatusLabel(status)}</span>
                   </div>
                   <span className="fw-bold">{count}</span>
                 </div>

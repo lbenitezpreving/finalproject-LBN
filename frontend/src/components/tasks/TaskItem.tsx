@@ -58,13 +58,18 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
   };
   
   const getStatusText = (status: TaskStatus): string => {
+    // Debug para entender qué status está llegando
+    console.log(`🔍 TaskItem rendering status: "${status}" (type: ${typeof status}) for task ${task.id}`);
+    
     switch (status) {
       case TaskStatus.BACKLOG: return 'Backlog';
       case TaskStatus.TODO: return 'To Do';
       case TaskStatus.DOING: return 'Doing';
       case TaskStatus.DEMO: return 'Demo';
       case TaskStatus.DONE: return 'Done';
-      default: return 'Desconocido';
+      default: 
+        console.log(`❌ Unknown status: "${status}" for task ${task.id}`);
+        return `Desconocido (${status})`;
     }
   };
   

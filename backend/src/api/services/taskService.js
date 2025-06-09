@@ -177,15 +177,45 @@ const combineTasksWithExtendedData = async (redmineTasks) => {
       }
     }
 
+    // Debug: Logging para entender qué devuelve Redmine para el status
+    console.log(`🔍 Task ${redmineTask.id} status debug:`, {
+      raw_status: redmineTask.status,
+      status_type: typeof redmineTask.status,
+      status_name: redmineTask.status?.name,
+      status_id: redmineTask.status?.id
+    });
+    
     // Normalizar el status para usar nombre en lugar de objeto de Redmine
-    const statusName = redmineTask.status?.name || redmineTask.status?.id ? REDMINE_STATUS_ID_TO_NAME[redmineTask.status.id] : redmineTask.status;
+    let statusName;
+    if (redmineTask.status && typeof redmineTask.status === 'object') {
+      // Si es un objeto con name e id (formato típico de Redmine)
+      if (redmineTask.status.name) {
+        statusName = redmineTask.status.name;
+        console.log(`✅ Using status.name: "${statusName}"`);
+      } else if (redmineTask.status.id) {
+        console.log(`⚠️ No status.name, trying ID mapping for ID ${redmineTask.status.id}`);
+        statusName = REDMINE_STATUS_ID_TO_NAME[redmineTask.status.id];
+        if (!statusName) {
+          console.log(`❌ No mapping found for status ID ${redmineTask.status.id}`);
+          statusName = `Status ID ${redmineTask.status.id}`; // Fallback para debug
+        } else {
+          console.log(`✅ Mapped ID ${redmineTask.status.id} to "${statusName}"`);
+        }
+      }
+    } else if (typeof redmineTask.status === 'string') {
+      // Si ya es un string, usarlo directamente
+      statusName = redmineTask.status;
+      console.log(`✅ Using string status: "${statusName}"`);
+    }
+    
+    console.log(`🔄 Task ${redmineTask.id} final status: "${statusName}"`);
     
     return {
       // Datos de Redmine
       id: redmineTask.id,
       subject: redmineTask.subject,
       description: redmineTask.description,
-      status: statusName || redmineTask.status,
+      status: statusName || 'Backlog', // Fallback por defecto
       priority: redmineTask.priority,
       author: redmineTask.author,
       assigned_to: redmineTask.assigned_to,
@@ -245,7 +275,7 @@ const combineTasksWithExtendedData = async (redmineTasks) => {
  */
 const REDMINE_STATUS_NAME_TO_ID = {
   'Backlog': 1,
-  'To do': 2, 
+  'To Do': 2,   // "To Do" con mayúsculas y espacio (exacto de Redmine)
   'Doing': 3,
   'Demo': 4,
   'Done': 5
@@ -257,7 +287,7 @@ const REDMINE_STATUS_NAME_TO_ID = {
  */
 const REDMINE_STATUS_ID_TO_NAME = {
   1: 'Backlog',
-  2: 'To do',
+  2: 'To Do',
   3: 'Doing', 
   4: 'Demo',
   5: 'Done'

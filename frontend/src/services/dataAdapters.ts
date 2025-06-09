@@ -5,10 +5,10 @@ import { Task, TaskStatus, Team, Department, User } from '../types';
  */
 
 // Mapeo de estados de Redmine a nuestros estados
-// Los estados reales de Redmine son: "Backlog", "To do", "Doing", "Demo", "Done"
+// Los estados reales de Redmine son: "Backlog", "To Do", "Doing", "Demo", "Done"
 const STATUS_MAPPING: Record<string, TaskStatus> = {
   'Backlog': TaskStatus.BACKLOG,
-  'To do': TaskStatus.TODO,
+  'To Do': TaskStatus.TODO,    // Corregido: "To Do" con mayúsculas
   'Doing': TaskStatus.DOING,
   'Demo': TaskStatus.DEMO,
   'Done': TaskStatus.DONE,
@@ -26,16 +26,30 @@ const STAGE_MAPPING: Record<string, TaskStatus> = {
  * Convierte una tarea del backend al formato del frontend
  */
 export const adaptBackendTask = (backendTask: any): Task => {
-  // Determinar el status basado en el estado de Redmine
+  // Debug para entender qué status viene del backend
+  console.log(`🔍 adaptBackendTask for task ${backendTask.id}:`, {
+    raw_status: backendTask.status,
+    status_type: typeof backendTask.status,
+    status_name: backendTask.status?.name,
+    etapa: backendTask.etapa
+  });
+  
+  // Determinar el status basado en el estado de Redmine (PRIORIDAD 1)
   let status = TaskStatus.BACKLOG;
   if (backendTask.status?.name) {
     status = STATUS_MAPPING[backendTask.status.name] || TaskStatus.BACKLOG;
-  }
-
-  // Determinar el status basado en la etapa del backend
-  if (backendTask.etapa) {
+    console.log(`🔄 Status mapped from status.name: "${backendTask.status.name}" → ${status}`);
+  } else if (typeof backendTask.status === 'string') {
+    // Si el backend ya envía un string directamente
+    status = STATUS_MAPPING[backendTask.status] || TaskStatus.BACKLOG;
+    console.log(`🔄 Status mapped from string: "${backendTask.status}" → ${status}`);
+  } else if (backendTask.etapa) {
+    // Solo usar etapa como fallback si no hay status de Redmine
     status = STAGE_MAPPING[backendTask.etapa] || TaskStatus.BACKLOG;
+    console.log(`🔄 Status fallback from etapa: "${backendTask.etapa}" → ${status}`);
   }
+  
+  console.log(`✅ Final status for task ${backendTask.id}: ${status}`);
 
   // Si no tiene etapa del backend, calcularlo basado en los datos
   if (!backendTask.etapa) {
@@ -180,7 +194,7 @@ export const adaptFiltersToBackend = (frontendFilters: any) => {
     // Priorizar los nombres reales de Redmine
     const statusMapping: Record<string, string> = {
       [TaskStatus.BACKLOG]: 'Backlog',
-      [TaskStatus.TODO]: 'To do', 
+      [TaskStatus.TODO]: 'To Do',    // Corregido: "To Do" con mayúsculas
       [TaskStatus.DOING]: 'Doing',
       [TaskStatus.DEMO]: 'Demo',
       [TaskStatus.DONE]: 'Done'
