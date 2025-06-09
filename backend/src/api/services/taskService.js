@@ -12,7 +12,8 @@ const redmineService = {
     const params = {
       ...filters,
       offset,
-      limit
+      limit,
+      include: 'custom_fields' // Incluir campos personalizados
     };
     
     // Llamar al método real del servicio
@@ -28,7 +29,8 @@ const redmineService = {
   },
   
   async getIssue(issueId) {
-    return await redmineServiceInstance.getIssue(issueId);
+    // Incluir campos personalizados al obtener una tarea específica
+    return await redmineServiceInstance.getIssue(issueId, { include: 'custom_fields' });
   }
 };
 
@@ -64,10 +66,24 @@ const combineTasksWithExtendedData = async (redmineTasks) => {
     }
   });
 
-  // Crear un mapa para acceso rápido
+  // Obtener todos los departamentos para mapeo
+  const departamentos = await prisma.departamento.findMany({
+    where: { activo: true },
+    select: {
+      id: true,
+      nombre: true
+    }
+  });
+
+  // Crear mapas para acceso rápido
   const extendedTasksMap = new Map();
   extendedTasks.forEach(task => {
     extendedTasksMap.set(task.redmineTaskId, task);
+  });
+
+  const departamentosMap = new Map();
+  departamentos.forEach(dept => {
+    departamentosMap.set(dept.nombre.toLowerCase(), dept);
   });
 
   // Auto-crear registros faltantes para tareas de Redmine que no existen en TaskDistributor
@@ -116,9 +132,30 @@ const combineTasksWithExtendedData = async (redmineTasks) => {
 
     // Extraer información de campos personalizados de Redmine
     const customFields = redmineTask.custom_fields || [];
-    const departamento = customFields.find(cf => cf.name === 'departamento')?.value;
-    const responsableNegocio = customFields.find(cf => cf.name === 'responsable_negocio')?.value;
-    const funcional = customFields.find(cf => cf.name === 'funcional')?.value;
+    
+    // Debug: Log de custom fields disponibles (solo en desarrollo)
+    if (process.env.NODE_ENV === 'development' && customFields.length > 0) {
+      console.log(`🔍 Task ${redmineTask.id} custom_fields:`, customFields.map(cf => `${cf.name}="${cf.value}"`).join(', '));
+    }
+    
+    // Buscar campos con nombres case-insensitive para mayor flexibilidad
+    const departamentoNombre = customFields.find(cf => 
+      cf.name && cf.name.toLowerCase() === 'departamento'
+    )?.value;
+    
+    const responsableNegocio = customFields.find(cf => 
+      cf.name && (cf.name.toLowerCase() === 'responsable_negocio' || cf.name.toLowerCase() === 'responsable negocio')
+    )?.value;
+    
+    const funcional = customFields.find(cf => 
+      cf.name && cf.name.toLowerCase() === 'funcional'
+    )?.value;
+
+    // Buscar el departamento en la base de datos
+    let departamentoInfo = null;
+    if (departamentoNombre) {
+      departamentoInfo = departamentosMap.get(departamentoNombre.toLowerCase());
+    }
 
     // Determinar la etapa de la tarea
     let etapa = 'sin_planificar';
@@ -153,7 +190,9 @@ const combineTasksWithExtendedData = async (redmineTasks) => {
       tracker: redmineTask.tracker,
       
       // Información de campos personalizados
-      departamento,
+      departamento: departamentoNombre,
+      departamento_id: departamentoInfo?.id,
+      departamento_nombre: departamentoInfo?.nombre || departamentoNombre,
       responsable_negocio: responsableNegocio,
       funcional,
       
@@ -232,11 +271,20 @@ const applyTaskDistributorFilters = (tasks, filters, user) => {
     // En una implementación real, esto se determinaría por la relación usuario-departamento
   }
 
-  // Filtro por departamento
+  // Filtro por departamento (soporta tanto nombre como ID)
   if (filters.departamento) {
-    filteredTasks = filteredTasks.filter(task => 
-      task.departamento && task.departamento.toLowerCase().includes(filters.departamento.toLowerCase())
-    );
+    // Si es un número, filtrar por ID
+    const departamentoId = parseInt(filters.departamento);
+    if (!isNaN(departamentoId)) {
+      filteredTasks = filteredTasks.filter(task => 
+        task.departamento_id === departamentoId
+      );
+    } else {
+      // Si es texto, filtrar por nombre
+      filteredTasks = filteredTasks.filter(task => 
+        task.departamento && task.departamento.toLowerCase().includes(filters.departamento.toLowerCase())
+      );
+    }
   }
 
   // Filtro por responsable de negocio

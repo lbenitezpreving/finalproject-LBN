@@ -12,6 +12,15 @@ async function main() {
   // Crear departamentos
   const departamentos = await Promise.all([
     prisma.departamento.upsert({
+      where: { nombre: 'Tecnología' },
+      update: {},
+      create: {
+        nombre: 'Tecnología',
+        descripcion: 'Departamento de Tecnología e Innovación',
+        activo: true
+      }
+    }),
+    prisma.departamento.upsert({
       where: { nombre: 'Marketing' },
       update: {},
       create: {
@@ -30,11 +39,38 @@ async function main() {
       }
     }),
     prisma.departamento.upsert({
+      where: { nombre: 'Recursos Humanos' },
+      update: {},
+      create: {
+        nombre: 'Recursos Humanos',
+        descripcion: 'Departamento de Recursos Humanos',
+        activo: true
+      }
+    }),
+    prisma.departamento.upsert({
       where: { nombre: 'Finanzas' },
       update: {},
       create: {
         nombre: 'Finanzas',
         descripcion: 'Departamento de Finanzas y Contabilidad',
+        activo: true
+      }
+    }),
+    prisma.departamento.upsert({
+      where: { nombre: 'Operaciones' },
+      update: {},
+      create: {
+        nombre: 'Operaciones',
+        descripcion: 'Departamento de Operaciones',
+        activo: true
+      }
+    }),
+    prisma.departamento.upsert({
+      where: { nombre: 'Atención al Cliente' },
+      update: {},
+      create: {
+        nombre: 'Atención al Cliente',
+        descripcion: 'Departamento de Atención al Cliente',
         activo: true
       }
     }),

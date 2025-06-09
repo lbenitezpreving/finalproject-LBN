@@ -1526,6 +1526,209 @@
       ]
     },
     {
+      "name": "Redmine API - Verificación",
+      "item": [
+        {
+          "name": "Listar Issues de Redmine (con custom_fields)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/redmine/issues?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "redmine", "issues"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Consultar directamente issues de Redmine para verificar que incluye custom_fields con departamento"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has issues array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('issues');",
+                  "    pm.expect(jsonData.data.issues).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Issues have custom_fields', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.issues.length > 0) {",
+                  "        pm.expect(jsonData.data.issues[0]).to.have.property('custom_fields');",
+                  "        console.log('Custom fields encontrados:', JSON.stringify(jsonData.data.issues[0].custom_fields, null, 2));",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('Custom field departamento exists', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.issues.length > 0) {",
+                  "        var issue = jsonData.data.issues[0];",
+                  "        var departamentoField = issue.custom_fields.find(cf => cf.name === 'departamento');",
+                  "        if (departamentoField) {",
+                  "            console.log('Campo departamento encontrado:', departamentoField);",
+                  "            pm.expect(departamentoField).to.have.property('value');",
+                  "        } else {",
+                  "            console.log('Campo departamento NO encontrado en custom_fields');",
+                  "        }",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener Issue específico de Redmine",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/redmine/issues/10001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "redmine", "issues", "10001"]
+            },
+            "description": "Obtener un issue específico de Redmine con todos sus custom_fields"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Issue has custom_fields', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.issue).to.have.property('custom_fields');",
+                  "    console.log('Custom fields del issue:', JSON.stringify(jsonData.data.issue.custom_fields, null, 2));",
+                  "});",
+                  "",
+                  "pm.test('Check all custom fields', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var customFields = jsonData.data.issue.custom_fields;",
+                  "    ",
+                  "    customFields.forEach(function(field) {",
+                  "        console.log('Custom field found: ' + field.name + ' = ' + field.value);",
+                  "    });",
+                  "    ",
+                  "    var departamento = customFields.find(cf => cf.name === 'departamento');",
+                  "    var responsable = customFields.find(cf => cf.name === 'responsable_negocio');",
+                  "    var funcional = customFields.find(cf => cf.name === 'funcional');",
+                  "    ",
+                  "    console.log('Departamento:', departamento ? departamento.value : 'NO ENCONTRADO');",
+                  "    console.log('Responsable Negocio:', responsable ? responsable.value : 'NO ENCONTRADO');",
+                  "    console.log('Funcional:', funcional ? funcional.value : 'NO ENCONTRADO');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar Tareas Combinadas (Redmine + BD)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks?limit=3",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "3"
+                }
+              ]
+            },
+            "description": "Verificar que las tareas combinadas incluyen información de departamento desde Redmine y BD"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Tasks have department information', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.tasks.length > 0) {",
+                  "        jsonData.data.tasks.forEach(function(task, index) {",
+                  "            console.log('Tarea ' + (index + 1) + ':');",
+                  "            console.log('  ID: ' + task.id);",
+                  "            console.log('  Subject: ' + task.subject);",
+                  "            console.log('  Departamento (Redmine): ' + (task.departamento || 'NO ENCONTRADO'));",
+                  "            console.log('  Departamento ID (BD): ' + (task.departamento_id || 'NO ENCONTRADO'));",
+                  "            console.log('  Departamento Nombre (BD): ' + (task.departamento_nombre || 'NO ENCONTRADO'));",
+                  "            console.log('  Responsable Negocio: ' + (task.responsable_negocio || 'NO ENCONTRADO'));",
+                  "            console.log('  Funcional: ' + (task.funcional || 'NO ENCONTRADO'));",
+                  "            console.log('  ---');",
+                  "        });",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test('At least one task has department info', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var hasAnyDepartment = false;",
+                  "    ",
+                  "    if (jsonData.data.tasks.length > 0) {",
+                  "        jsonData.data.tasks.forEach(function(task) {",
+                  "            if (task.departamento || task.departamento_nombre) {",
+                  "                hasAnyDepartment = true;",
+                  "            }",
+                  "        });",
+                  "    }",
+                  "    ",
+                  "    if (!hasAnyDepartment) {",
+                  "        console.log('⚠️  NINGUNA tarea tiene información de departamento. Posibles causas:');",
+                  "        console.log('1. Redmine no está devolviendo custom_fields');",
+                  "        console.log('2. El campo \"departamento\" no existe en Redmine');",
+                  "        console.log('3. Las tareas no tienen el campo departamento configurado');",
+                  "    } else {",
+                  "        console.log('✅ Al menos una tarea tiene información de departamento');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Documentación",
       "item": [
         {

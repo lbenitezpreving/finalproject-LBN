@@ -831,6 +831,16 @@ export const getTasksWithStage = (): Task[] => {
   return mockTasks.map(task => ({
     ...task,
     status: task.status || getTaskStage(task),
-    assignedToName: task.assignedTo ? getUserName(task.assignedTo) : undefined
+    assignedToName: task.assignedTo ? getUserName(task.assignedTo) : undefined,
+    // En datos mock asignamos nombres directamente - en producción vendrán del backend
+    departmentName: task.department === 1 ? 'Tecnología' :
+                   task.department === 2 ? 'Marketing' :
+                   task.department === 3 ? 'Ventas' :
+                   task.department === 4 ? 'Recursos Humanos' :
+                   task.department === 5 ? 'Finanzas' :
+                   task.department === 6 ? 'Operaciones' :
+                   task.department === 7 ? 'Atención al Cliente' :
+                   task.department === 8 ? 'Producto' :
+                   'Sin departamento'
   }));
 }; 

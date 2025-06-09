@@ -13,7 +13,7 @@ import {
   faEye
 } from '@fortawesome/free-solid-svg-icons';
 import { Task, TaskStatus } from '../../types';
-import { getDepartmentNameById, getTeamNameById } from '../../services/dataAdapters';
+import { getTeamNameById } from '../../services/dataAdapters';
 
 interface TaskItemProps {
   task: Task;
@@ -22,15 +22,9 @@ interface TaskItemProps {
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => {
-  const [departmentName, setDepartmentName] = useState<string>('Cargando...');
   const [teamName, setTeamName] = useState<string>('Cargando...');
 
   useEffect(() => {
-    // Cargar nombre del departamento
-    getDepartmentNameById(task.department)
-      .then(name => setDepartmentName(name))
-      .catch(() => setDepartmentName('Error'));
-
     // Cargar nombre del equipo si existe
     if (task.team) {
       getTeamNameById(task.team)
@@ -39,7 +33,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
     } else {
       setTeamName('Sin asignar');
     }
-  }, [task.department, task.team]);
+  }, [task.team]);
   
   const getStatusColor = (status: TaskStatus): string => {
     switch (status) {
@@ -116,7 +110,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onClick, actionButtons }) => 
         <div>
           <strong>#{task.id}</strong>
           <div className="text-muted small">
-            {departmentName}
+            {task.departmentName || 'Sin departamento'}
           </div>
         </div>
       </td>

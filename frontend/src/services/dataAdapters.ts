@@ -63,7 +63,8 @@ export const adaptBackendTask = (backendTask: any): Task => {
       ? `${backendTask.assigned_to.firstname} ${backendTask.assigned_to.lastname}`.trim()
       : undefined),
     functional: backendTask.funcional,
-    department: getDepartmentIdFromName(backendTask.departamento),
+    department: backendTask.departamento_id || 1, // Usar ID real del backend o default
+    departmentName: backendTask.departamento_nombre || backendTask.departamento,
     createdAt: new Date(backendTask.created_on || Date.now()),
     updatedAt: new Date(backendTask.updated_on || Date.now()),
     sprints: backendTask.estimacion_sprints,
@@ -153,26 +154,6 @@ export const adaptBackendStats = (backendResponse: any) => {
 };
 
 /**
- * Mapeo básico de nombres de departamento a IDs
- * En una implementación real, esto vendría de una API de departamentos
- */
-const DEPARTMENT_MAPPING: Record<string, number> = {
-  'Tecnología': 1,
-  'Marketing': 2,
-  'Ventas': 3,
-  'Recursos Humanos': 4,
-  'Finanzas': 5,
-  'Operaciones': 6,
-  'Atención al Cliente': 7,
-  'Producto': 8,
-};
-
-const getDepartmentIdFromName = (departmentName?: string): number => {
-  if (!departmentName) return 1; // Default a Tecnología
-  return DEPARTMENT_MAPPING[departmentName] || 1;
-};
-
-/**
  * Convierte filtros del frontend al formato del backend
  */
 export const adaptFiltersToBackend = (frontendFilters: any) => {
@@ -180,12 +161,8 @@ export const adaptFiltersToBackend = (frontendFilters: any) => {
 
   // Mapear filtros comunes
   if (frontendFilters.department) {
-    const deptName = Object.keys(DEPARTMENT_MAPPING).find(name => 
-      DEPARTMENT_MAPPING[name] === frontendFilters.department
-    );
-    if (deptName) {
-      backendFilters.departamento = deptName;
-    }
+    // Enviar directamente el ID del departamento
+    backendFilters.departamento = frontendFilters.department.toString();
   }
 
   if (frontendFilters.status) {
@@ -207,8 +184,6 @@ export const adaptFiltersToBackend = (frontendFilters: any) => {
       backendFilters.etapa = backendStage[0];
     }
   }
-
-
 
   if (frontendFilters.team) {
     backendFilters.equipo_id = frontendFilters.team;

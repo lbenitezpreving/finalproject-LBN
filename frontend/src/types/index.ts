@@ -35,6 +35,7 @@ export interface Task {
   assignedToName?: string; // Nombre del usuario responsable
   functional?: string; // Documento funcional
   department: number; // ID del departamento
+  departmentName?: string; // Nombre del departamento
   createdAt: Date;
   updatedAt: Date;
   // Campos extendidos que no están en Redmine
