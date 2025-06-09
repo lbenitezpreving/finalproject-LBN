@@ -86,11 +86,21 @@ export const adaptBackendTasksResponse = (backendResponse: any) => {
 
   const backendData = backendResponse.data;
   
-  // La estructura del backend puede ser { tasks: [], total: number, ... }
+  // Debug log para identificar el problema
+  console.log('🔍 adaptBackendTasksResponse received:', {
+    data: backendData,
+    tasks: Array.isArray(backendData.tasks) ? `Array[${backendData.tasks.length}]` : backendData.tasks,
+    pagination: backendData.pagination
+  });
+  
+  // La estructura del backend puede ser { tasks: [], pagination: { total, offset, limit, ... } }
   const tasks = backendData.tasks || backendData;
-  const totalCount = backendData.total_count || backendData.totalCount || tasks.length;
-  const offset = backendData.offset || 0;
-  const limit = backendData.limit || tasks.length;
+  const pagination = backendData.pagination || {};
+  
+  // Priorizar datos de pagination, luego fallback a nivel raíz
+  const totalCount = pagination.total || backendData.total_count || backendData.totalCount || tasks.length;
+  const offset = pagination.offset || backendData.offset || 0;
+  const limit = pagination.limit || backendData.limit || 25; // Default 25 en lugar de tasks.length
   
   return {
     data: tasks.map(adaptBackendTask),

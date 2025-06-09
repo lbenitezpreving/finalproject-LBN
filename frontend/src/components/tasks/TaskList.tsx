@@ -48,6 +48,15 @@ const TaskList: React.FC = () => {
         pageSize: pagination?.pageSize || 20 
       };
 
+      // Debug log para ayudar a identificar el problema
+      console.log('🔍 LoadTasks called with:', {
+        filters,
+        pagination: paginationToUse,
+        sort,
+        userRole: user?.role,
+        userDepartment: user?.department
+      });
+
       const result = await TaskService.getTasks(
         filters,
         paginationToUse,
@@ -57,10 +66,15 @@ const TaskList: React.FC = () => {
         user?.department
       );
 
+      console.log('✅ TaskService response:', {
+        tasksCount: result.data.length,
+        pagination: result.pagination
+      });
+
       setTasks(result.data);
       setPagination(result.pagination);
     } catch (err) {
-      console.error('Error loading tasks:', err);
+      console.error('❌ Error loading tasks:', err);
       setError(err instanceof Error ? err.message : 'Error al cargar las tareas');
     } finally {
       setLoading(false);
@@ -69,8 +83,11 @@ const TaskList: React.FC = () => {
   
   // Cargar tareas cuando cambien los filtros o ordenamiento
   useEffect(() => {
-    loadTasks();
-  }, [filters, sort, user?.role, user?.department]);
+    // Solo cargar si tenemos usuario autenticado
+    if (user) {
+      loadTasks();
+    }
+  }, [filters, sort, user?.role, user?.department, user]);
   
   // Manejar click en tarea para estimación
   const handleEstimateTask = useCallback((task: Task) => {
@@ -102,27 +119,29 @@ const TaskList: React.FC = () => {
   
   // Manejar cambios en filtros
   const handleFiltersChange = useCallback((newFilters: TaskFilters) => {
+    console.log('🔄 Filters changed:', { from: filters, to: newFilters });
     setFilters(newFilters);
     updateUrlFromFilters(newFilters);
-    // Resetear a la primera página cuando cambien los filtros
+    // Resetear completamente la paginación cuando cambien los filtros
     setPagination(prev => prev ? { 
       currentPage: 1, 
       pageSize: prev.pageSize, 
-      totalItems: prev.totalItems, 
-      totalPages: prev.totalPages 
+      totalItems: 0,  // Reset para forzar recarga
+      totalPages: 0   // Reset para forzar recarga
     } : null);
-  }, [updateUrlFromFilters]);
+  }, [updateUrlFromFilters, filters]);
   
   // Manejar limpieza de filtros
   const handleClearFilters = useCallback(() => {
     const emptyFilters: TaskFilters = {};
     setFilters(emptyFilters);
     clearFilters();
+    // Resetear completamente la paginación al limpiar filtros
     setPagination(prev => prev ? { 
       currentPage: 1, 
       pageSize: prev.pageSize, 
-      totalItems: prev.totalItems, 
-      totalPages: prev.totalPages 
+      totalItems: 0,  // Reset para forzar recarga
+      totalPages: 0   // Reset para forzar recarga
     } : null);
   }, [clearFilters]);
   
