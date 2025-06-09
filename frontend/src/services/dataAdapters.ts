@@ -5,13 +5,13 @@ import { Task, TaskStatus, Team, Department, User } from '../types';
  */
 
 // Mapeo de estados de Redmine a nuestros estados
+// Los estados reales de Redmine son: "Backlog", "To do", "Doing", "Demo", "Done"
 const STATUS_MAPPING: Record<string, TaskStatus> = {
-  'New': TaskStatus.BACKLOG,
-  'In Progress': TaskStatus.DOING,
-  'Closed': TaskStatus.DONE,
-  'Resolved': TaskStatus.DONE,
-  'Feedback': TaskStatus.DEMO,
-  'Rejected': TaskStatus.BACKLOG,
+  'Backlog': TaskStatus.BACKLOG,
+  'To do': TaskStatus.TODO,
+  'Doing': TaskStatus.DOING,
+  'Demo': TaskStatus.DEMO,
+  'Done': TaskStatus.DONE,
 };
 
 // Mapeo de etapas del backend a nuestros estados
@@ -176,12 +176,20 @@ export const adaptFiltersToBackend = (frontendFilters: any) => {
   }
 
   if (frontendFilters.status) {
-    // Mapear nuestros estados a estados de Redmine
-    const redmineStatus = Object.entries(STATUS_MAPPING).find(([redmineState, ourState]) => 
-      ourState === frontendFilters.status
-    );
-    if (redmineStatus) {
-      backendFilters.status_id = redmineStatus[0];
+    // Mapear nuestros estados a estados de Redmine (enviar nombre, no ID)
+    // Priorizar los nombres reales de Redmine
+    const statusMapping: Record<string, string> = {
+      [TaskStatus.BACKLOG]: 'Backlog',
+      [TaskStatus.TODO]: 'To do', 
+      [TaskStatus.DOING]: 'Doing',
+      [TaskStatus.DEMO]: 'Demo',
+      [TaskStatus.DONE]: 'Done'
+    };
+    
+    const redmineStatusName = statusMapping[frontendFilters.status];
+    if (redmineStatusName) {
+      backendFilters.status_id = redmineStatusName;
+      console.log(`🔍 Status filter mapped: ${frontendFilters.status} → ${redmineStatusName}`);
     }
   }
 

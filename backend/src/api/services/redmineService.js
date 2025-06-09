@@ -11,7 +11,7 @@ const mockRedmineTasks = [
     description: 'Desarrollar funcionalidad para enviar notificaciones push a usuarios móviles',
     project: { id: 1, name: 'Proyecto Marketing' },
     tracker: { id: 2, name: 'Feature' },
-    status: { id: 1, name: 'Nuevo' },
+    status: { id: 1, name: 'Backlog' },
     priority: { id: 4, name: 'Alta' },
     author: { id: 1, name: 'Juan Pérez' },
     assigned_to: { id: 2, name: 'María García' },
@@ -31,7 +31,7 @@ const mockRedmineTasks = [
     description: 'Mejorar el rendimiento de las consultas SQL más utilizadas',
     project: { id: 2, name: 'Proyecto Ventas' },
     tracker: { id: 3, name: 'Bug' },
-    status: { id: 2, name: 'En progreso' },
+    status: { id: 2, name: 'Doing' },
     priority: { id: 3, name: 'Normal' },
     author: { id: 3, name: 'Carlos Ruiz' },
     assigned_to: { id: 4, name: 'Laura Mendez' },
@@ -51,7 +51,7 @@ const mockRedmineTasks = [
     description: 'Crear dashboard interactivo para visualización de métricas financieras',
     project: { id: 3, name: 'Proyecto Finanzas' },
     tracker: { id: 2, name: 'Feature' },
-    status: { id: 3, name: 'Resuelto' },
+    status: { id: 3, name: 'Done' },
     priority: { id: 2, name: 'Baja' },
     author: { id: 5, name: 'Elena Torres' },
     assigned_to: { id: 6, name: 'Diego Vargas' },
@@ -71,7 +71,7 @@ const mockRedmineTasks = [
     description: 'Integrar sistema de pagos con proveedor externo',
     project: { id: 4, name: 'Proyecto Producto' },
     tracker: { id: 2, name: 'Feature' },
-    status: { id: 1, name: 'Nuevo' },
+    status: { id: 4, name: 'To do' },
     priority: { id: 4, name: 'Alta' },
     author: { id: 7, name: 'Miguel Santos' },
     assigned_to: null,
@@ -91,7 +91,7 @@ const mockRedmineTasks = [
     description: 'Migrar aplicación web a la última versión del framework',
     project: { id: 1, name: 'Proyecto Marketing' },
     tracker: { id: 1, name: 'Mejora' },
-    status: { id: 1, name: 'Nuevo' },
+    status: { id: 5, name: 'Demo' },
     priority: { id: 3, name: 'Normal' },
     author: { id: 8, name: 'Sofia Herrera' },
     assigned_to: null,
@@ -127,10 +127,14 @@ const getIssues = async (filters = {}, offset = 0, limit = 25) => {
 
   if (filters.status_id) {
     if (filters.status_id === 'open') {
-      filteredTasks = filteredTasks.filter(task => task.status.id !== 3);
+      filteredTasks = filteredTasks.filter(task => task.status.name !== 'Done');
     } else if (filters.status_id === 'closed') {
-      filteredTasks = filteredTasks.filter(task => task.status.id === 3);
+      filteredTasks = filteredTasks.filter(task => task.status.name === 'Done');
+    } else if (typeof filters.status_id === 'string' && isNaN(parseInt(filters.status_id))) {
+      // Filtrar por nombre de estado
+      filteredTasks = filteredTasks.filter(task => task.status.name === filters.status_id);
     } else {
+      // Filtrar por ID de estado (backwards compatibility)
       filteredTasks = filteredTasks.filter(task => task.status.id === parseInt(filters.status_id));
     }
   }
@@ -201,7 +205,7 @@ const createIssue = async (issueData) => {
     description: issueData.description || '',
     project: { id: issueData.project_id, name: `Proyecto ${issueData.project_id}` },
     tracker: { id: issueData.tracker_id || 2, name: 'Feature' },
-    status: { id: 1, name: 'Nuevo' },
+    status: { id: 1, name: 'Backlog' },
     priority: { id: issueData.priority_id || 3, name: 'Normal' },
     author: { id: 1, name: 'Usuario Sistema' },
     assigned_to: issueData.assigned_to_id ? { id: issueData.assigned_to_id, name: 'Usuario Asignado' } : null,

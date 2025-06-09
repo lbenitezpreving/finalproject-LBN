@@ -16,8 +16,12 @@ const redmineService = {
       include: 'custom_fields' // Incluir campos personalizados
     };
     
+    console.log(`🔍 Calling Redmine with params:`, JSON.stringify(params, null, 2));
+    
     // Llamar al método real del servicio
     const response = await redmineServiceInstance.listIssues(params);
+    
+    console.log(`✅ Redmine response: ${response.issues?.length || 0} issues, total: ${response.total_count || 0}`);
     
     // Retornar en el formato esperado
     return {
@@ -173,12 +177,15 @@ const combineTasksWithExtendedData = async (redmineTasks) => {
       }
     }
 
+    // Normalizar el status para usar nombre en lugar de objeto de Redmine
+    const statusName = redmineTask.status?.name || redmineTask.status?.id ? REDMINE_STATUS_ID_TO_NAME[redmineTask.status.id] : redmineTask.status;
+    
     return {
       // Datos de Redmine
       id: redmineTask.id,
       subject: redmineTask.subject,
       description: redmineTask.description,
-      status: redmineTask.status,
+      status: statusName || redmineTask.status,
       priority: redmineTask.priority,
       author: redmineTask.author,
       assigned_to: redmineTask.assigned_to,
@@ -224,6 +231,39 @@ const combineTasksWithExtendedData = async (redmineTasks) => {
 };
 
 /**
+ * Mapeo de nombres de estados a IDs de Redmine
+ * NOTA: Los IDs pueden variar según la configuración de tu instancia de Redmine
+ * Valores típicos de una instalación estándar de Redmine:
+ * - 1: New (Nuevo)
+ * - 2: In Progress (En Progreso) 
+ * - 3: Resolved (Resuelto)
+ * - 4: Feedback (Feedback)
+ * - 5: Closed (Cerrado)
+ * - 6: Rejected (Rechazado)
+ * 
+ * Para tu configuración personalizada, mapearemos a los IDs que uses:
+ */
+const REDMINE_STATUS_NAME_TO_ID = {
+  'Backlog': 1,
+  'To do': 2, 
+  'Doing': 3,
+  'Demo': 4,
+  'Done': 5
+};
+
+/**
+ * Mapeo inverso: IDs de Redmine a nombres de estados
+ * Si tu Redmine usa diferentes nombres, ajusta este mapeo
+ */
+const REDMINE_STATUS_ID_TO_NAME = {
+  1: 'Backlog',
+  2: 'To do',
+  3: 'Doing', 
+  4: 'Demo',
+  5: 'Done'
+};
+
+/**
  * Construye filtros para Redmine basados en los parámetros de entrada
  * @param {Object} filters - Filtros del frontend
  * @returns {Object} Filtros para Redmine
@@ -232,7 +272,21 @@ const buildRedmineFilters = (filters) => {
   const redmineFilters = {};
 
   if (filters.status_id) {
-    redmineFilters.status_id = filters.status_id;
+    console.log(`🔍 Processing status filter: "${filters.status_id}" (type: ${typeof filters.status_id})`);
+    
+    // Si es un nombre de estado, convertir a ID
+    if (typeof filters.status_id === 'string' && REDMINE_STATUS_NAME_TO_ID[filters.status_id]) {
+      redmineFilters.status_id = REDMINE_STATUS_NAME_TO_ID[filters.status_id];
+      console.log(`🔄 Status name converted: "${filters.status_id}" → ID ${redmineFilters.status_id}`);
+    } else if (typeof filters.status_id === 'string' && !isNaN(parseInt(filters.status_id))) {
+      // Si es un ID como string, convertir a número
+      redmineFilters.status_id = parseInt(filters.status_id);
+      console.log(`🔄 Status ID parsed: "${filters.status_id}" → ${redmineFilters.status_id}`);
+    } else {
+      // Si ya es un número, usar directamente
+      redmineFilters.status_id = filters.status_id;
+      console.log(`🔄 Status ID used directly: ${redmineFilters.status_id}`);
+    }
   }
 
   if (filters.priority_id) {

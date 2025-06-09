@@ -148,6 +148,19 @@ class RedmineService {
   }
 
   /**
+   * Obtiene todos los estados disponibles en Redmine
+   * @returns {Promise<Object>} Lista de estados de issues
+   */
+  async listIssueStatuses() {
+    try {
+      const response = await redmineAPI.get('/issue_statuses.json');
+      return response.data;
+    } catch (error) {
+      this.handleApiError(error);
+    }
+  }
+
+  /**
    * Buscar tareas con criterios específicos y sincronizarlas con TaskDistributor
    * @param {Object} criteria - Criterios de búsqueda
    * @param {Object} prisma - Instancia de Prisma Client
