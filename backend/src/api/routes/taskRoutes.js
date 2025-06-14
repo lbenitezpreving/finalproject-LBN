@@ -455,4 +455,141 @@ router.get('/:id', authenticate, taskController.getTaskById);
  */
 router.put('/:id/estimation', authenticate, authorize(['TECNOLOGIA']), taskController.updateTaskEstimation);
 
+/**
+ * @swagger
+ * /api/tasks/{id}/recommendations:
+ *   get:
+ *     summary: Obtener recomendaciones de equipos para una tarea (solo tecnología)
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID único de la tarea
+ *     responses:
+ *       200:
+ *         description: Recomendaciones obtenidas correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       teamId:
+ *                         type: integer
+ *                       teamName:
+ *                         type: string
+ *                       isExternal:
+ *                         type: boolean
+ *                       currentLoad:
+ *                         type: number
+ *                       capacity:
+ *                         type: number
+ *                       affinity:
+ *                         type: integer
+ *                       possibleStartDate:
+ *                         type: string
+ *                         format: date
+ *                       possibleEndDate:
+ *                         type: string
+ *                         format: date
+ *                       recommendationScore:
+ *                         type: number
+ *                       currentProjects:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *       400:
+ *         description: ID de tarea inválido
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Sin permisos (solo tecnología)
+ *       404:
+ *         description: Tarea no encontrada
+ *       422:
+ *         description: Tarea no se puede planificar
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.get('/:id/recommendations', authenticate, authorize(['TECNOLOGIA']), taskController.getTeamRecommendations);
+
+/**
+ * @swagger
+ * /api/tasks/{id}/assignment:
+ *   put:
+ *     summary: Asignar equipo y fechas a una tarea (solo tecnología)
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID único de la tarea
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - equipo_id
+ *               - fecha_inicio
+ *               - fecha_fin
+ *             properties:
+ *               equipo_id:
+ *                 type: integer
+ *                 description: ID del equipo asignado
+ *               fecha_inicio:
+ *                 type: string
+ *                 format: date
+ *                 description: Fecha de inicio planificada
+ *               fecha_fin:
+ *                 type: string
+ *                 format: date
+ *                 description: Fecha de fin planificada
+ *     responses:
+ *       200:
+ *         description: Tarea asignada correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Task'
+ *       400:
+ *         description: Datos de entrada inválidos
+ *       401:
+ *         description: No autorizado
+ *       403:
+ *         description: Sin permisos (solo tecnología)
+ *       404:
+ *         description: Tarea o equipo no encontrado
+ *       422:
+ *         description: Tarea no se puede planificar
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.put('/:id/assignment', authenticate, authorize(['TECNOLOGIA']), taskController.assignTeamAndDates);
+
 module.exports = router; 

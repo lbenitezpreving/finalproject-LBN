@@ -396,10 +396,174 @@ const updateTaskEstimation = async (req, res) => {
   }
 };
 
+/**
+ * Obtener recomendaciones de equipos para una tarea
+ * GET /api/tasks/:id/recommendations
+ * 
+ * Solo usuarios con rol TECNOLOGIA pueden ver recomendaciones
+ * Solo tareas con estimación pueden ser planificadas
+ */
+const getTeamRecommendations = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validar ID
+    const taskId = parseInt(id);
+    if (isNaN(taskId) || taskId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de tarea inválido'
+      });
+    }
+
+    // Obtener recomendaciones
+    const result = await taskService.getTeamRecommendations(taskId, req.user);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Recomendaciones obtenidas correctamente',
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Error en getTeamRecommendations:', error);
+
+    if (error.message === 'Tarea no encontrada') {
+      return res.status(404).json({
+        success: false,
+        message: 'Tarea no encontrada'
+      });
+    }
+
+    if (error.message.includes('no se puede planificar')) {
+      return res.status(422).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    if (error.message.includes('Sin permisos')) {
+      return res.status(403).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor al obtener recomendaciones',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
+ * Asignar equipo y fechas a una tarea
+ * PUT /api/tasks/:id/assignment
+ * 
+ * Solo usuarios con rol TECNOLOGIA pueden asignar equipos
+ * Solo tareas con estimación pueden ser planificadas
+ */
+const assignTeamAndDates = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { equipo_id, fecha_inicio, fecha_fin } = req.body;
+
+    // Validar ID
+    const taskId = parseInt(id);
+    if (isNaN(taskId) || taskId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de tarea inválido'
+      });
+    }
+
+    // Validar datos de entrada
+    if (!equipo_id || !fecha_inicio || !fecha_fin) {
+      return res.status(400).json({
+        success: false,
+        message: 'Los campos equipo_id, fecha_inicio y fecha_fin son obligatorios'
+      });
+    }
+
+    // Validar fechas
+    const startDate = new Date(fecha_inicio);
+    const endDate = new Date(fecha_fin);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las fechas proporcionadas no son válidas'
+      });
+    }
+
+    if (endDate <= startDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha de fin debe ser posterior a la fecha de inicio'
+      });
+    }
+
+    // Asignar equipo y fechas
+    const result = await taskService.assignTeamAndDates(
+      taskId,
+      parseInt(equipo_id),
+      startDate,
+      endDate,
+      req.user
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Tarea asignada correctamente',
+      data: result.data
+    });
+
+  } catch (error) {
+    console.error('Error en assignTeamAndDates:', error);
+
+    if (error.message === 'Tarea no encontrada') {
+      return res.status(404).json({
+        success: false,
+        message: 'Tarea no encontrada'
+      });
+    }
+
+    if (error.message === 'Equipo no encontrado') {
+      return res.status(404).json({
+        success: false,
+        message: 'Equipo no encontrado'
+      });
+    }
+
+    if (error.message.includes('no se puede planificar')) {
+      return res.status(422).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    if (error.message.includes('Sin permisos')) {
+      return res.status(403).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor al asignar la tarea',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   getTasks,
   getTaskById,
   getTaskStats,
   getFilterOptions,
-  updateTaskEstimation
+  updateTaskEstimation,
+  getTeamRecommendations,
+  assignTeamAndDates
 }; 

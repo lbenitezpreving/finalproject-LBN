@@ -83,6 +83,22 @@ export const taskService = {
     const response = await api.get(`/tasks/${taskId}/recommendations`);
     return response.data;
   },
+
+  assignTeamAndDates: async (taskId: number, assignmentData: { equipo_id: number; fecha_inicio: string; fecha_fin: string }) => {
+    const response = await api.put(`/tasks/${taskId}/assignment`, assignmentData);
+    return response.data;
+  },
+
+  checkTeamConflicts: async (teamId: number, startDate: string, endDate: string, excludeTaskId?: number) => {
+    const response = await api.get(`/teams/${teamId}/conflicts`, {
+      params: {
+        start_date: startDate,
+        end_date: endDate,
+        exclude_task_id: excludeTaskId
+      }
+    });
+    return response.data;
+  },
 };
 
 // Servicios de equipos

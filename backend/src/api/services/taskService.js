@@ -650,9 +650,11 @@ const updateTaskEstimation = async (taskId, estimacionSprints, factorCarga, user
     const redmineTask = redmineResponse.issue;
 
     // 3. Verificar que la tarea está en estado correcto para estimación
-    // Solo tareas con estado "Nuevo" (ID 1) pueden ser estimadas
-    if (redmineTask.status.id !== 1) {
-      throw new Error(`La tarea no se puede estimar en su estado actual: ${redmineTask.status.name}. Solo se pueden estimar tareas en estado "Nuevo"`);
+    // Solo tareas con estado "Backlog" pueden ser estimadas
+    const allowedStatusesForEstimation = ['Backlog'];
+    const statusName = redmineTask.status?.name || redmineTask.status;
+    if (!allowedStatusesForEstimation.includes(statusName)) {
+      throw new Error(`La tarea no se puede estimar en su estado actual: ${statusName}. Solo se pueden estimar tareas en estado "Backlog"`);
     }
 
     // 4. Buscar o crear registro extendido
@@ -738,10 +740,374 @@ const updateTaskEstimation = async (taskId, estimacionSprints, factorCarga, user
   }
 };
 
+/**
+ * Obtiene recomendaciones de equipos para una tarea específica
+ * @param {number} taskId - ID de la tarea en Redmine
+ * @param {Object} user - Usuario autenticado
+ * @returns {Promise<Object>} Recomendaciones de equipos ordenadas por puntuación
+ */
+const getTeamRecommendations = async (taskId, user) => {
+  try {
+    // 1. Verificar permisos (solo TECNOLOGIA)
+    if (user.role !== 'TECNOLOGIA') {
+      throw new Error('Sin permisos: solo usuarios de tecnología pueden ver recomendaciones');
+    }
+
+    // 2. Obtener la tarea y verificar que se puede planificar
+    const taskResult = await getTaskById(taskId);
+    const task = taskResult.data;
+
+    // Verificar que la tarea tiene estimación
+    if (!task.estimacion_sprints || !task.factor_carga) {
+      throw new Error('La tarea no se puede planificar: requiere estimación de sprints y factor de carga');
+    }
+
+    // Verificar que la tarea está en estado correcto
+    const allowedStatuses = ['Backlog', 'To Do']; // Estados que permiten planificación
+    if (!allowedStatuses.includes(task.status)) {
+      throw new Error(`La tarea no se puede planificar en su estado actual: ${task.status}`);
+    }
+
+    // 3. Obtener información del departamento
+    let departamentoId = null;
+    if (task.departamento) {
+      const departamento = await prisma.departamento.findFirst({
+        where: { 
+          nombre: { 
+            equals: task.departamento,
+            mode: 'insensitive' 
+          },
+          activo: true 
+        }
+      });
+      departamentoId = departamento?.id;
+    }
+
+    // 4. Obtener todos los equipos activos
+    const equipos = await prisma.equipo.findMany({
+      where: { activo: true },
+      include: {
+        asignaciones: {
+          include: {
+            tarea: true
+          },
+          where: {
+            tarea: {
+              fechaFinPlanificada: {
+                gte: new Date() // Solo asignaciones activas
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // 5. Calcular recomendaciones para cada equipo
+    const recommendations = await Promise.all(
+      equipos.map(async (equipo) => {
+        // Obtener afinidad con el departamento
+        let affinity = 1; // Valor por defecto
+        if (departamentoId) {
+          const afinidad = await prisma.matrizAfinidad.findUnique({
+            where: {
+              equipoId_departamentoId: {
+                equipoId: equipo.id,
+                departamentoId: departamentoId
+              }
+            }
+          });
+          affinity = afinidad?.nivelAfinidad || 1;
+        }
+
+        // Calcular carga actual del equipo
+        const currentLoad = equipo.asignaciones.reduce((total, asignacion) => {
+          return total + (asignacion.tarea.factorCarga || 1);
+        }, 0);
+
+        // Calcular fechas posibles
+        const { possibleStartDate, possibleEndDate } = calculatePossibleDates(
+          equipo, 
+          task.estimacion_sprints, 
+          task.factor_carga
+        );
+
+        // Obtener proyectos actuales
+        const currentProjects = await getCurrentProjects(equipo.id);
+
+        // Calcular puntuación de recomendación
+        const recommendationScore = calculateRecommendationScore(
+          affinity,
+          equipo.capacidad - currentLoad,
+          equipo.capacidad,
+          possibleStartDate,
+          equipo.tipo === 'INTERNO'
+        );
+
+        return {
+          teamId: equipo.id,
+          teamName: equipo.nombre,
+          isExternal: equipo.tipo === 'EXTERNO',
+          currentLoad: Math.round(currentLoad * 10) / 10,
+          capacity: equipo.capacidad,
+          affinity: affinity,
+          possibleStartDate: possibleStartDate.toISOString().split('T')[0],
+          possibleEndDate: possibleEndDate.toISOString().split('T')[0],
+          recommendationScore: recommendationScore,
+          currentProjects: currentProjects
+        };
+      })
+    );
+
+    // 6. Ordenar por puntuación descendente
+    recommendations.sort((a, b) => b.recommendationScore - a.recommendationScore);
+
+    return {
+      success: true,
+      data: recommendations
+    };
+
+  } catch (error) {
+    console.error('Error al obtener recomendaciones:', error);
+    throw error;
+  }
+};
+
+/**
+ * Asigna un equipo y fechas a una tarea
+ * @param {number} taskId - ID de la tarea en Redmine
+ * @param {number} equipoId - ID del equipo a asignar
+ * @param {Date} fechaInicio - Fecha de inicio planificada
+ * @param {Date} fechaFin - Fecha de fin planificada
+ * @param {Object} user - Usuario autenticado
+ * @returns {Promise<Object>} Tarea actualizada
+ */
+const assignTeamAndDates = async (taskId, equipoId, fechaInicio, fechaFin, user) => {
+  try {
+    // 1. Verificar permisos (solo TECNOLOGIA)
+    if (user.role !== 'TECNOLOGIA') {
+      throw new Error('Sin permisos: solo usuarios de tecnología pueden asignar equipos');
+    }
+
+    // 2. Verificar que la tarea existe y se puede planificar
+    const taskResult = await getTaskById(taskId);
+    const task = taskResult.data;
+
+    if (!task.estimacion_sprints || !task.factor_carga) {
+      throw new Error('La tarea no se puede planificar: requiere estimación de sprints y factor de carga');
+    }
+
+    const allowedStatuses = ['Backlog', 'To Do']; // Estados que permiten planificación
+    if (!allowedStatuses.includes(task.status)) {
+      throw new Error(`La tarea no se puede planificar en su estado actual: ${task.status}`);
+    }
+
+    // 3. Verificar que el equipo existe
+    const equipo = await prisma.equipo.findUnique({
+      where: { id: equipoId, activo: true }
+    });
+
+    if (!equipo) {
+      throw new Error('Equipo no encontrado');
+    }
+
+    // 4. Iniciar transacción para actualizar tarea extendida y crear asignación
+    const result = await prisma.$transaction(async (prisma) => {
+      // Actualizar la tarea extendida con las fechas
+      const updatedTask = await prisma.tareaExtended.update({
+        where: { redmineTaskId: taskId },
+        data: {
+          fechaInicioPlanificada: fechaInicio,
+          fechaFinPlanificada: fechaFin
+        }
+      });
+
+      // Crear nueva asignación
+      await prisma.asignacion.create({
+        data: {
+          tareaId: updatedTask.id,
+          equipoId: equipoId,
+          fechaAsignacion: new Date()
+        }
+      });
+
+      return updatedTask;
+    });
+
+    // 5. Obtener la tarea actualizada con toda la información
+    const updatedTaskResult = await getTaskById(taskId);
+
+    return {
+      success: true,
+      data: updatedTaskResult.data
+    };
+
+  } catch (error) {
+    console.error('Error al asignar equipo y fechas:', error);
+    throw error;
+  }
+};
+
+/**
+ * Calcula las fechas posibles de inicio y fin para un equipo
+ * @param {Object} equipo - Equipo con sus asignaciones
+ * @param {number} estimacionSprints - Estimación en sprints
+ * @param {number} factorCarga - Factor de carga
+ * @returns {Object} Fechas posibles
+ */
+const calculatePossibleDates = (equipo, estimacionSprints, factorCarga) => {
+  const today = new Date();
+  let possibleStartDate = new Date(today);
+
+  // Calcular disponibilidad actual del equipo
+  const currentLoad = equipo.asignaciones.reduce((total, asignacion) => {
+    return total + (asignacion.tarea.factorCarga || 1);
+  }, 0);
+
+  const availableCapacity = equipo.capacidad - currentLoad;
+
+  // Si el equipo no tiene capacidad disponible, encontrar la próxima fecha libre
+  if (availableCapacity < factorCarga) {
+    // Encontrar la fecha más tardía de finalización de proyectos actuales
+    const endDates = equipo.asignaciones
+      .filter(a => a.tarea.fechaFinPlanificada)
+      .map(a => new Date(a.tarea.fechaFinPlanificada));
+
+    if (endDates.length > 0) {
+      const latestEndDate = new Date(Math.max(...endDates));
+      possibleStartDate = new Date(latestEndDate);
+      possibleStartDate.setDate(possibleStartDate.getDate() + 1); // Día siguiente
+    }
+  }
+
+  // Calcular fecha de fin (sprints * 2 semanas)
+  const possibleEndDate = new Date(possibleStartDate);
+  possibleEndDate.setDate(possibleEndDate.getDate() + (estimacionSprints * 14));
+
+  return { possibleStartDate, possibleEndDate };
+};
+
+/**
+ * Calcula la puntuación de recomendación para un equipo
+ * @param {number} affinity - Afinidad con el departamento (1-5)
+ * @param {number} availableCapacity - Capacidad disponible
+ * @param {number} totalCapacity - Capacidad total
+ * @param {Date} possibleStartDate - Fecha posible de inicio
+ * @param {boolean} isInternal - Si es equipo interno
+ * @returns {number} Puntuación de recomendación
+ */
+const calculateRecommendationScore = (affinity, availableCapacity, totalCapacity, possibleStartDate, isInternal) => {
+  let score = 0;
+
+  // Factor de afinidad (40% del peso)
+  score += (affinity / 5) * 40;
+
+  // Factor de disponibilidad (35% del peso)
+  const capacityRatio = Math.max(0, availableCapacity) / totalCapacity;
+  score += capacityRatio * 35;
+
+  // Factor de tiempo (15% del peso) - cuanto antes pueda empezar, mejor
+  const today = new Date();
+  const daysUntilStart = Math.max(0, (possibleStartDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+  const timeScore = Math.max(0, 15 - (daysUntilStart / 7)); // Menos puntos por cada semana de retraso
+  score += timeScore;
+
+  // Bonus por equipo interno (10% del peso)
+  if (isInternal) {
+    score += 10;
+  }
+
+  return Math.round(score * 10) / 10; // Redondear a 1 decimal
+};
+
+/**
+ * Obtiene los proyectos actuales de un equipo
+ * @param {number} equipoId - ID del equipo
+ * @returns {Promise<Array>} Proyectos actuales
+ */
+const getCurrentProjects = async (equipoId) => {
+  const today = new Date();
+  
+  const asignaciones = await prisma.asignacion.findMany({
+    where: {
+      equipoId: equipoId,
+      tarea: {
+        fechaFinPlanificada: {
+          gte: today // Solo proyectos que no han terminado
+        }
+      }
+    },
+    include: {
+      tarea: {
+        include: {
+          _count: {
+            select: {
+              asignaciones: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      tarea: {
+        fechaInicioPlanificada: 'asc'
+      }
+    }
+  });
+
+  // Obtener información de las tareas de Redmine para tener el nombre
+  const projects = await Promise.all(
+    asignaciones.map(async (asignacion) => {
+      try {
+        const redmineTask = await redmineService.getIssue(asignacion.tarea.redmineTaskId);
+        
+        // Determinar estado del proyecto
+        let status = 'doing';
+        const fechaInicio = asignacion.tarea.fechaInicioPlanificada;
+        const fechaFin = asignacion.tarea.fechaFinPlanificada;
+        
+        if (fechaInicio && fechaFin) {
+          const inicio = new Date(fechaInicio);
+          const fin = new Date(fechaFin);
+          const daysDiff = Math.ceil((fin.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (today < inicio) {
+            status = 'todo';
+          } else if (daysDiff <= 7) {
+            status = 'demo';
+          }
+        }
+
+        return {
+          id: asignacion.tarea.redmineTaskId,
+          name: redmineTask.issue?.subject || `Tarea #${asignacion.tarea.redmineTaskId}`,
+          startDate: asignacion.tarea.fechaInicioPlanificada,
+          endDate: asignacion.tarea.fechaFinPlanificada,
+          status: status,
+          loadFactor: asignacion.tarea.factorCarga || 1
+        };
+      } catch (error) {
+        console.error(`Error al obtener tarea ${asignacion.tarea.redmineTaskId}:`, error);
+        return {
+          id: asignacion.tarea.redmineTaskId,
+          name: `Tarea #${asignacion.tarea.redmineTaskId}`,
+          startDate: asignacion.tarea.fechaInicioPlanificada,
+          endDate: asignacion.tarea.fechaFinPlanificada,
+          status: 'doing',
+          loadFactor: asignacion.tarea.factorCarga || 1
+        };
+      }
+    })
+  );
+
+  return projects;
+};
+
 module.exports = {
   getTasksWithFilters,
   getTaskById,
   updateTaskEstimation,
+  getTeamRecommendations,
+  assignTeamAndDates,
   combineTasksWithExtendedData,
   applyTextSearch,
   applySorting,
