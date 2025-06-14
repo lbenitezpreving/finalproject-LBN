@@ -210,6 +210,7 @@ export class GanttService {
        // Ordenar por fecha de inicio
        ganttTasks.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
     
+       console.log('Final Gantt tasks to return:', ganttTasks.length, ganttTasks);
        return ganttTasks;
      } catch (error) {
        console.error('Error loading Gantt tasks:', error);

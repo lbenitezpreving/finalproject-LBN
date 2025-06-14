@@ -24,19 +24,31 @@ const GanttPage: React.FC = () => {
   // Cargar script de Frappe Gantt
   useEffect(() => {
     const loadGanttScript = () => {
+      console.log('Loading Gantt script...');
       if (typeof window !== 'undefined' && !(window as any).Gantt) {
+        console.log('Gantt library not found, loading from CDN...');
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js';
         script.onload = () => {
+          console.log('Gantt script loaded successfully');
           const link = document.createElement('link');
           link.rel = 'stylesheet';
           link.href = 'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css';
           document.head.appendChild(link);
           
-          loadGanttData();
+          // Esperar un poco para que el CSS se cargue
+          setTimeout(() => {
+            console.log('Loading Gantt data after script load...');
+            loadGanttData();
+          }, 100);
+        };
+        script.onerror = () => {
+          console.error('Failed to load Gantt script');
+          setError('Error al cargar la librería del diagrama Gantt');
         };
         document.head.appendChild(script);
       } else {
+        console.log('Gantt library already available, loading data...');
         loadGanttData();
       }
     };
@@ -51,18 +63,34 @@ const GanttPage: React.FC = () => {
     }
   }, [filters]);
   
+  // Efecto adicional para recrear el Gantt cuando el contenedor esté disponible
+  useEffect(() => {
+    if (tasks.length > 0 && ganttContainerRef.current && typeof (window as any).Gantt !== 'undefined') {
+      console.log('Container is now available, creating Gantt chart...');
+      createGanttChart(tasks);
+    }
+  }, [tasks, viewMode]);
+  
   // Cargar datos del Gantt
   const loadGanttData = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      console.log('Loading Gantt data with filters:', filters);
       const ganttTasks = await GanttService.getGanttTasks(filters);
+      console.log('Gantt tasks loaded:', ganttTasks.length, ganttTasks);
       setTasks(ganttTasks);
       
       // Recrear el Gantt cuando cambien las tareas
       if (ganttTasks.length > 0 && typeof (window as any).Gantt !== 'undefined') {
-        createGanttChart(ganttTasks);
+        console.log('Creating Gantt chart with tasks:', ganttTasks);
+        // Usar setTimeout para asegurar que el DOM esté completamente renderizado
+        setTimeout(() => {
+          createGanttChart(ganttTasks);
+        }, 100);
+      } else {
+        console.log('Not creating Gantt chart. Tasks length:', ganttTasks.length, 'Gantt available:', typeof (window as any).Gantt !== 'undefined');
       }
       
     } catch (err) {
@@ -75,12 +103,32 @@ const GanttPage: React.FC = () => {
   
   // Crear o actualizar el diagrama Gantt
   const createGanttChart = (ganttTasks: GanttTask[]) => {
-    if (!ganttContainerRef.current || typeof (window as any).Gantt === 'undefined') return;
+    console.log('createGanttChart called with:', ganttTasks.length, 'tasks');
+    console.log('Container ref:', ganttContainerRef.current);
+    console.log('Gantt library available:', typeof (window as any).Gantt !== 'undefined');
+    
+    if (!ganttContainerRef.current) {
+      console.log('Container not available, retrying in 200ms...');
+      setTimeout(() => createGanttChart(ganttTasks), 200);
+      return;
+    }
+    
+    if (typeof (window as any).Gantt === 'undefined') {
+      console.log('Gantt library not available');
+      setError('La librería del diagrama Gantt no está disponible');
+      return;
+    }
     
     // Limpiar el contenedor
     ganttContainerRef.current.innerHTML = '';
     
     try {
+      console.log('Creating Gantt instance with config:', {
+        view_mode: viewMode,
+        date_format: 'YYYY-MM-DD',
+        language: 'es'
+      });
+      
       // Crear nueva instancia de Gantt
       ganttInstanceRef.current = new (window as any).Gantt(ganttContainerRef.current, ganttTasks, {
         view_mode: viewMode,
@@ -107,6 +155,8 @@ const GanttPage: React.FC = () => {
           console.log('Progress changed:', task.id, progress);
         }
       });
+      
+      console.log('Gantt chart created successfully:', ganttInstanceRef.current);
     } catch (err) {
       setError('Error al crear el diagrama Gantt');
       console.error('Error creating Gantt chart:', err);
