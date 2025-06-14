@@ -153,11 +153,12 @@ export class GanttService {
        
        const allTasks = response.data || [];
       
-      // Filtrar solo las tareas que tienen fechas de planificación (fecha_inicio_planificada y fecha_fin_planificada)
+      // Filtrar solo las tareas que tienen fechas de planificación
       let filteredTasks = allTasks.filter((task: any) => 
-        task.fecha_inicio_planificada && 
-        task.fecha_fin_planificada && 
-        (task.status === 'To Do' || 
+        task.startDate && 
+        task.endDate && 
+        (task.status === 'Backlog' ||
+         task.status === 'To Do' || 
          task.status === 'Doing' || 
          task.status === 'Demo' ||
          task.status === 'Done')
@@ -166,41 +167,41 @@ export class GanttService {
       // Aplicar filtros adicionales de fecha si se proporcionan
       if (filters?.startDate) {
         filteredTasks = filteredTasks.filter((task: any) => 
-          new Date(task.fecha_fin_planificada) >= filters.startDate!
+          new Date(task.endDate) >= filters.startDate!
         );
       }
       
       if (filters?.endDate) {
         filteredTasks = filteredTasks.filter((task: any) => 
-          new Date(task.fecha_inicio_planificada) <= filters.endDate!
+          new Date(task.startDate) <= filters.endDate!
         );
       }
       
              // Aplicar filtro de equipos
        if (filters?.teams && filters.teams.length > 0) {
          filteredTasks = filteredTasks.filter((task: any) => 
-           task.equipo_asignado && filters.teams!.includes(task.equipo_asignado.id)
+           task.team && filters.teams!.includes(task.team)
          );
        }
     
        // Convertir a formato Gantt con resolución de nombres async
        const ganttTasksPromises = filteredTasks.map(async (task: any) => {
          const [teamName, departmentName] = await Promise.all([
-           getTeamName(task.equipo_asignado?.id),
-           getDepartmentName(task.departamento_id)
+           getTeamName(task.team),
+           getDepartmentName(task.department)
          ]);
 
          return {
            id: task.id.toString(),
            name: task.subject,
-           start: formatDateForGantt(new Date(task.fecha_inicio_planificada)),
-           end: formatDateForGantt(new Date(task.fecha_fin_planificada)),
+           start: formatDateForGantt(new Date(task.startDate)),
+           end: formatDateForGantt(new Date(task.endDate)),
            progress: calculateTaskProgress(task),
            custom_class: getTaskClassFromStatus(task.status),
            team: teamName,
            department: departmentName,
            priority: task.priority,
-           loadFactor: task.factor_carga
+           loadFactor: task.loadFactor
          };
        });
 
@@ -351,10 +352,11 @@ export class GanttService {
       const teamsWithLoad = updateTeamsWithCurrentLoad(teams, tasksWithStage);
       
       const statuses = [
-        { value: TaskStatus.TODO, label: 'Planificada' },
-        { value: TaskStatus.DOING, label: 'En Progreso' },
-        { value: TaskStatus.DEMO, label: 'En Demo' },
-        { value: TaskStatus.DONE, label: 'Completada' }
+        { value: TaskStatus.BACKLOG, label: 'Backlog' },
+        { value: TaskStatus.TODO, label: 'To Do' },
+        { value: TaskStatus.DOING, label: 'Doing' },
+        { value: TaskStatus.DEMO, label: 'Demo' },
+        { value: TaskStatus.DONE, label: 'Done' }
       ];
 
       return {
@@ -367,10 +369,11 @@ export class GanttService {
       
       // Fallback básico en caso de error
       const statuses = [
-        { value: TaskStatus.TODO, label: 'Planificada' },
-        { value: TaskStatus.DOING, label: 'En Progreso' },
-        { value: TaskStatus.DEMO, label: 'En Demo' },
-        { value: TaskStatus.DONE, label: 'Completada' }
+        { value: TaskStatus.BACKLOG, label: 'Backlog' },
+        { value: TaskStatus.TODO, label: 'To Do' },
+        { value: TaskStatus.DOING, label: 'Doing' },
+        { value: TaskStatus.DEMO, label: 'Demo' },
+        { value: TaskStatus.DONE, label: 'Done' }
       ];
 
       return {

@@ -4,7 +4,6 @@ import { GanttService, GanttTask, GanttFilters } from '../services/ganttService'
 import GanttFiltersComponent from '../components/gantt/GanttFilters';
 import GanttStats from '../components/gantt/GanttStats';
 import GanttControls from '../components/gantt/GanttControls';
-import GanttStatsDebug from '../components/gantt/GanttStatsDebug';
 import './GanttPage.css';
 
 // Declaración de tipo para Frappe Gantt
@@ -201,13 +200,6 @@ const GanttPage: React.FC = () => {
               </p>
             </div>
           </div>
-        </Col>
-      </Row>
-      
-      {/* Debug - Temporal */}
-      <Row className="mb-4">
-        <Col>
-          <GanttStatsDebug />
         </Col>
       </Row>
       
