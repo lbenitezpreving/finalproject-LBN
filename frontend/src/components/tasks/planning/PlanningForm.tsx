@@ -10,7 +10,7 @@ import {
   faClock,
   faCalculator
 } from '@fortawesome/free-solid-svg-icons';
-import { Task, TaskStatus, TeamRecommendation } from '../../../types';
+import { Task, TeamRecommendation } from '../../../types';
 
 interface ConflictInfo {
   hasConflicts: boolean;
@@ -57,8 +57,9 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
     }
   }, [recommendation, onDateChange]);
 
-  const formatDateForInput = (date: Date): string => {
-    return new Date(date).toISOString().split('T')[0];
+  const formatDateForInput = (date: Date | string): string => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toISOString().split('T')[0];
   };
 
   const handleStartDateChange = (value: string) => {
@@ -190,7 +191,7 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
           <Row>
             <Col md={3}>
               <small className="text-muted d-block">Puntuación</small>
-              <strong className="text-success">{recommendation.score}/100</strong>
+              <strong className="text-success">{recommendation.recommendationScore || recommendation.score || 0}/100</strong>
             </Col>
             <Col md={3}>
               <small className="text-muted d-block">Afinidad</small>
@@ -198,11 +199,11 @@ const PlanningForm: React.FC<PlanningFormProps> = ({
             </Col>
             <Col md={3}>
               <small className="text-muted d-block">Carga actual</small>
-              <strong>{recommendation.currentLoad.toFixed(1)}/2.0</strong>
+              <strong>{recommendation.currentLoad.toFixed(1)}/{recommendation.capacity.toFixed(1)}</strong>
             </Col>
             <Col md={3}>
               <small className="text-muted d-block">Disponibilidad</small>
-              <strong>{recommendation.availableCapacity.toFixed(1)}</strong>
+              <strong>{Math.max(0, recommendation.capacity - recommendation.currentLoad).toFixed(1)}</strong>
             </Col>
           </Row>
         </Card.Body>

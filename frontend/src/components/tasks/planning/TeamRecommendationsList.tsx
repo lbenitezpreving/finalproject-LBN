@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Row, Col, Badge, Button, ProgressBar, Alert } from 'react-bootstrap';
+import { Card, Row, Col, Badge, Button, ProgressBar } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faStar, 
@@ -7,13 +7,11 @@ import {
   faCalendarAlt,
   faChevronRight,
   faClock,
-  faExternalLinkAlt,
-  faHome,
-  faExclamationTriangle,
-  faInfoCircle
+
 } from '@fortawesome/free-solid-svg-icons';
 import { TeamRecommendation, Task, TaskStatus } from '../../../types';
 import CurrentProjectsList from './CurrentProjectsList';
+import RecommendationAlgorithmExplanation from './RecommendationAlgorithmExplanation';
 import './TeamRecommendationsList.css';
 
 interface TeamRecommendationsListProps {
@@ -61,8 +59,9 @@ const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
     return 'capacity-available';
   };
 
-  const formatDate = (date: Date): string => {
-    return new Date(date).toLocaleDateString('es-ES', {
+  const formatDate = (date: Date | string): string => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -80,9 +79,10 @@ const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
       reasons.push('Alta afinidad con el departamento');
     }
     
-    if (recommendation.availableCapacity >= 1) {
+    const availableCapacity = recommendation.capacity - recommendation.currentLoad;
+    if (availableCapacity >= 1) {
       reasons.push('Capacidad disponible inmediata');
-    } else if (recommendation.availableCapacity > 0) {
+    } else if (availableCapacity > 0) {
       reasons.push('Capacidad parcial disponible');
     }
     
@@ -127,11 +127,11 @@ const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
                   )}
                 </div>
                 <div className="score-container">
-                  <span className={`score ${getScoreClass(recommendation.score)}`}>
-                    {recommendation.score}
+                  <span className={`score ${getScoreClass(recommendation.recommendationScore || recommendation.score || 0)}`}>
+                    {recommendation.recommendationScore || recommendation.score || 0}
                   </span>
                   <small className="d-block text-center score-text">
-                    {getScoreText(recommendation.score)}
+                    {getScoreText(recommendation.recommendationScore || recommendation.score || 0)}
                   </small>
                 </div>
               </Card.Header>
@@ -170,17 +170,17 @@ const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
                       <div>
                         <div className="d-flex justify-content-between align-items-center mb-1">
                           <small>
-                            {recommendation.currentLoad.toFixed(1)}/2.0 utilizada
+                            {recommendation.currentLoad.toFixed(1)}/{recommendation.capacity.toFixed(1)} utilizada
                           </small>
                           <small className="text-muted">
-                            {Math.round((recommendation.currentLoad / 2) * 100)}%
+                            {Math.round((recommendation.currentLoad / recommendation.capacity) * 100)}%
                           </small>
                         </div>
                         <ProgressBar 
-                          now={(recommendation.currentLoad / 2) * 100}
+                          now={(recommendation.currentLoad / recommendation.capacity) * 100}
                           variant={
-                            recommendation.currentLoad >= 2 ? 'danger' :
-                            recommendation.currentLoad >= 1.6 ? 'warning' : 'success'
+                            recommendation.currentLoad >= recommendation.capacity ? 'danger' :
+                            recommendation.currentLoad >= (recommendation.capacity * 0.8) ? 'warning' : 'success'
                           }
                           style={{ height: '6px' }}
                         />
@@ -215,16 +215,13 @@ const TeamRecommendationsList: React.FC<TeamRecommendationsListProps> = ({
                   teamName={recommendation.teamName}
                 />
 
-                {/* Razón de recomendación */}
-                <div className="mb-3">
-                  <small className="text-muted d-block mb-1">¿Por qué se recomienda?</small>
-                  <small className="text-primary">
-                    {getRecommendationReason(recommendation)}
-                  </small>
-                </div>
+                {/* Explicación del algoritmo de recomendación */}
+                <RecommendationAlgorithmExplanation 
+                  recommendation={recommendation}
+                />
 
                 {/* Disponibilidad inmediata */}
-                {recommendation.availableCapacity > 0 && (
+                {(recommendation.capacity - recommendation.currentLoad) > 0 && (
                   <Badge bg="success" className="mb-2">
                     <FontAwesomeIcon icon={faUsers} className="me-1" />
                     Disponibilidad inmediata

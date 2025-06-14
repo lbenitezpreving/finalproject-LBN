@@ -87,12 +87,14 @@ export interface CurrentProject {
 export interface TeamRecommendation {
   teamId: number;
   teamName: string;
-  affinity: number;
+  isExternal: boolean; // Si es equipo externo o interno
   currentLoad: number;
-  availableCapacity: number;
-  possibleStartDate: Date;
-  possibleEndDate: Date;
-  score: number; // Puntuación global de la recomendación
+  capacity: number; // Capacidad total del equipo
+  affinity: number;
+  possibleStartDate: Date | string;
+  possibleEndDate: Date | string;
+  recommendationScore: number; // Puntuación global de la recomendación
+  score?: number; // Alias para compatibilidad (mapeará a recommendationScore)
   currentProjects: CurrentProject[]; // Proyectos actuales del equipo (adaptados de Task)
 }
 
