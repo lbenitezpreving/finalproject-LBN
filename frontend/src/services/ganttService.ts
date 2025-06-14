@@ -86,7 +86,7 @@ const calculateTaskProgress = (task: any): number => {
       const totalTime = end.getTime() - start.getTime();
       const elapsed = now.getTime() - start.getTime();
       return Math.min(Math.round((elapsed / totalTime) * 100), 80); // Máximo 80% si está en progreso
-    case 'To do':
+    case 'To Do':
       return 10; // Ha empezado pero no está en desarrollo activo
     default:
       return 0;
@@ -96,7 +96,7 @@ const calculateTaskProgress = (task: any): number => {
 // Función para obtener el color/clase CSS según el estado de la tarea (versión para datos reales)
 const getTaskClassFromStatus = (status: string): string => {
   switch (status) {
-    case 'To do':
+    case 'To Do':
       return 'gantt-task-planned';
     case 'Doing':
       return 'gantt-task-progress';
@@ -137,7 +137,7 @@ export class GanttService {
         // Mapear estados del enum a nombres esperados por el backend
         const statusMapping: Record<TaskStatus, string> = {
           [TaskStatus.BACKLOG]: 'Backlog',
-          [TaskStatus.TODO]: 'To do',
+          [TaskStatus.TODO]: 'To Do',
           [TaskStatus.DOING]: 'Doing',
           [TaskStatus.DEMO]: 'Demo', 
           [TaskStatus.DONE]: 'Done'
@@ -157,7 +157,7 @@ export class GanttService {
       let filteredTasks = allTasks.filter((task: any) => 
         task.fecha_inicio_planificada && 
         task.fecha_fin_planificada && 
-        (task.status === 'To do' || 
+        (task.status === 'To Do' || 
          task.status === 'Doing' || 
          task.status === 'Demo' ||
          task.status === 'Done')
@@ -216,7 +216,7 @@ export class GanttService {
      }
   }
   
-  /**
+    /**
    * Obtener estadísticas para el dashboard del Gantt
    */
   static async getGanttStats(filters?: GanttFilters): Promise<{
@@ -226,50 +226,105 @@ export class GanttService {
     tasksByDepartment: Record<string, number>;
     timeRange: { start: Date; end: Date } | null;
   }> {
-    const tasks = await this.getGanttTasks(filters);
-    
-    // Estadísticas básicas
-    const stats = {
-      totalTasks: tasks.length,
-      tasksByStatus: {} as Record<string, number>,
-      tasksByTeam: {} as Record<string, number>,
-      tasksByDepartment: {} as Record<string, number>,
-      timeRange: null as { start: Date; end: Date } | null
-    };
-    
-    // Inicializar contadores para los estados reales
-    const statusList = ['Backlog', 'To do', 'Doing', 'Demo', 'Done'];
-    statusList.forEach(status => {
-      stats.tasksByStatus[status] = 0;
-    });
-    
-    if (tasks.length > 0) {
-      let minDate = new Date(tasks[0].start);
-      let maxDate = new Date(tasks[0].end);
+    try {
+      console.log('Getting Gantt stats with filters:', filters);
       
-      tasks.forEach(task => {
-        // Contar por equipo
-        if (task.team) {
-          stats.tasksByTeam[task.team] = (stats.tasksByTeam[task.team] || 0) + 1;
-        }
-        
-        // Contar por departamento
-        if (task.department) {
-          stats.tasksByDepartment[task.department] = (stats.tasksByDepartment[task.department] || 0) + 1;
-        }
-        
-        // Calcular rango de fechas
-        const taskStart = new Date(task.start);
-        const taskEnd = new Date(task.end);
-        
-        if (taskStart < minDate) minDate = taskStart;
-        if (taskEnd > maxDate) maxDate = taskEnd;
+      // Obtener todas las tareas del backend (sin filtros inicialmente para debug)
+      const response = await TaskService.getTasks(
+        {}, // Sin filtros para obtener todas las tareas
+        { page: 1, pageSize: 500 } // Aumentar límite para obtener más datos
+      );
+      
+      const allTasks = response.data || [];
+      console.log('Total tasks from backend:', allTasks.length);
+      console.log('Sample task:', allTasks[0]); // Para ver la estructura de datos
+      
+      // Estadísticas básicas
+      const stats = {
+        totalTasks: allTasks.length,
+        tasksByStatus: {} as Record<string, number>,
+        tasksByTeam: {} as Record<string, number>,
+        tasksByDepartment: {} as Record<string, number>,
+        timeRange: null as { start: Date; end: Date } | null
+      };
+      
+      // Inicializar contadores para los estados reales
+      const statusList = ['Backlog', 'To Do', 'Doing', 'Demo', 'Done'];
+      statusList.forEach(status => {
+        stats.tasksByStatus[status] = 0;
       });
       
-      stats.timeRange = { start: minDate, end: maxDate };
+      if (allTasks.length > 0) {
+        let minDate: Date | null = null;
+        let maxDate: Date | null = null;
+        
+        // Procesar cada tarea para estadísticas
+        for (const task of allTasks) {
+          console.log(`Processing task ${task.id}: status=${task.status}, team=${task.team}, dept=${task.departmentName}`);
+          
+          // Contar por estado
+          if (task.status) {
+            // Convertir el enum a string para comparación
+            const statusString = task.status.toString();
+            // Normalizar el estado para que coincida con nuestros valores esperados
+            let normalizedStatus = statusString;
+            if (statusString === 'To do') normalizedStatus = 'To Do'; // Normalizar caso
+            
+            if (statusList.includes(normalizedStatus)) {
+              stats.tasksByStatus[normalizedStatus] = (stats.tasksByStatus[normalizedStatus] || 0) + 1;
+            } else {
+              console.warn('Unknown status found:', statusString);
+            }
+          }
+          
+          // Contar por departamento (usar directamente el campo departmentName)
+          if (task.departmentName) {
+            stats.tasksByDepartment[task.departmentName] = (stats.tasksByDepartment[task.departmentName] || 0) + 1;
+          }
+          
+          // Para equipos, usar un enfoque más simple por ahora
+          if (task.team) {
+            // Usar el ID del equipo como clave temporal
+            const teamKey = `Equipo ${task.team}`;
+            stats.tasksByTeam[teamKey] = (stats.tasksByTeam[teamKey] || 0) + 1;
+          }
+          
+          // Calcular rango de fechas (solo para tareas planificadas)
+          if (task.startDate && task.endDate) {
+            const taskStart = new Date(task.startDate);
+            const taskEnd = new Date(task.endDate);
+            
+            if (!minDate || taskStart < minDate) minDate = taskStart;
+            if (!maxDate || taskEnd > maxDate) maxDate = taskEnd;
+          }
+        }
+        
+        if (minDate && maxDate) {
+          stats.timeRange = { start: minDate, end: maxDate };
+        }
+      }
+      
+      console.log('Gantt stats calculated:', stats);
+      return stats;
+      
+    } catch (error) {
+      console.error('Error calculating Gantt stats:', error);
+      
+      // Fallback con estadísticas vacías
+      return {
+        totalTasks: 0,
+        tasksByStatus: {
+          'Backlog': 0,
+          'To Do': 0,
+          'Doing': 0,
+          'Demo': 0,
+          'Done': 0
+        },
+        tasksByTeam: {},
+        tasksByDepartment: {},
+        timeRange: null
+      };
     }
-    
-    return stats;
   }
   
   /**

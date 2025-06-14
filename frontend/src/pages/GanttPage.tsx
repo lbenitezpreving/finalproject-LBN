@@ -4,6 +4,7 @@ import { GanttService, GanttTask, GanttFilters } from '../services/ganttService'
 import GanttFiltersComponent from '../components/gantt/GanttFilters';
 import GanttStats from '../components/gantt/GanttStats';
 import GanttControls from '../components/gantt/GanttControls';
+import GanttStatsDebug from '../components/gantt/GanttStatsDebug';
 import './GanttPage.css';
 
 // Declaración de tipo para Frappe Gantt
@@ -189,6 +190,7 @@ const GanttPage: React.FC = () => {
   
   return (
     <Container fluid className="gantt-page">
+      {/* Header */}
       <Row className="mb-4">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
@@ -202,15 +204,16 @@ const GanttPage: React.FC = () => {
         </Col>
       </Row>
       
+      {/* Debug - Temporal */}
       <Row className="mb-4">
-        <Col lg={3}>
-          <GanttFiltersComponent 
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            loading={loading}
-          />
+        <Col>
+          <GanttStatsDebug />
         </Col>
-        <Col lg={9}>
+      </Row>
+      
+      {/* KPIs - Parte superior */}
+      <Row className="mb-4">
+        <Col>
           <GanttStats 
             filters={filters}
             tasksCount={tasks.length}
@@ -218,6 +221,18 @@ const GanttPage: React.FC = () => {
         </Col>
       </Row>
       
+      {/* Filtros - Horizontales debajo de los KPIs */}
+      <Row className="mb-4">
+        <Col>
+          <GanttFiltersComponent 
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            loading={loading}
+          />
+        </Col>
+      </Row>
+      
+      {/* Diagrama Gantt - Parte inferior */}
       <Row>
         <Col>
           {renderContent()}

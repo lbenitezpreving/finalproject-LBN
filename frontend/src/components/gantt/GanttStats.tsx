@@ -64,7 +64,7 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
     switch (status) {
       case 'Backlog':
         return 'Backlog';
-      case 'To do':
+      case 'To Do':
         return 'To Do';
       case 'Doing':
         return 'En Progreso';
@@ -81,7 +81,7 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
     switch (status) {
       case 'Backlog':
         return 'secondary';
-      case 'To do':
+      case 'To Do':
         return 'warning';
       case 'Doing':
         return 'primary';
@@ -127,154 +127,106 @@ const GanttStats: React.FC<GanttStatsProps> = ({ filters, tasksCount }) => {
     .slice(0, 3);
 
   return (
-    <Row>
-      {/* Estadísticas principales */}
-      <Col md={6} lg={3} className="mb-3">
-        <Card className="h-100">
-          <Card.Body className="d-flex align-items-center">
-            <div className="flex-shrink-0">
-              <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
-                   style={{ width: '3rem', height: '3rem' }}>
-                <FontAwesomeIcon icon={faTasks} />
-              </div>
-            </div>
-            <div className="flex-grow-1 ms-3">
-              <div className="fw-bold h4 mb-0">{stats.totalTasks}</div>
-              <div className="text-muted small">Tareas Planificadas</div>
-            </div>
-          </Card.Body>
-        </Card>
-      </Col>
-
-      <Col md={6} lg={3} className="mb-3">
-        <Card className="h-100">
-          <Card.Body className="d-flex align-items-center">
-            <div className="flex-shrink-0">
-              <div className="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" 
-                   style={{ width: '3rem', height: '3rem' }}>
-                <FontAwesomeIcon icon={faCalendarAlt} />
-              </div>
-            </div>
-            <div className="flex-grow-1 ms-3">
-              <div className="fw-bold small mb-0">{formatDateRange(stats.timeRange)}</div>
-              <div className="text-muted small">Rango Temporal</div>
-            </div>
-          </Card.Body>
-        </Card>
-      </Col>
-
-      <Col md={6} lg={3} className="mb-3">
-        <Card className="h-100">
-          <Card.Body className="d-flex align-items-center">
-            <div className="flex-shrink-0">
-              <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" 
-                   style={{ width: '3rem', height: '3rem' }}>
-                <FontAwesomeIcon icon={faUsers} />
-              </div>
-            </div>
-            <div className="flex-grow-1 ms-3">
-              <div className="fw-bold h4 mb-0">{Object.keys(stats.tasksByTeam).length}</div>
-              <div className="text-muted small">Equipos Activos</div>
-            </div>
-          </Card.Body>
-        </Card>
-      </Col>
-
-      <Col md={6} lg={3} className="mb-3">
-        <Card className="h-100">
-          <Card.Body className="d-flex align-items-center">
-            <div className="flex-shrink-0">
-              <div className="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" 
-                   style={{ width: '3rem', height: '3rem' }}>
-                <FontAwesomeIcon icon={faBuilding} />
-              </div>
-            </div>
-            <div className="flex-grow-1 ms-3">
-              <div className="fw-bold h4 mb-0">{Object.keys(stats.tasksByDepartment).length}</div>
-              <div className="text-muted small">Departamentos</div>
-            </div>
-          </Card.Body>
-        </Card>
-      </Col>
-
-      {/* Distribución por estado */}
-      <Col lg={4} className="mb-3">
-        <Card className="h-100">
-          <Card.Header>
-            <h6 className="mb-0">Distribución por Estado</h6>
-          </Card.Header>
-          <Card.Body>
-            {Object.entries(stats.tasksByStatus).map(([status, count]) => {
-              if (count === 0) return null;
-              return (
-                <div key={status} className="d-flex justify-content-between align-items-center mb-2">
-                  <div className="d-flex align-items-center">
-                    <div 
-                      className={`bg-${getStatusColor(status)} rounded me-2`}
-                      style={{ width: '12px', height: '12px' }}
-                    ></div>
-                    <span className="small">{getStatusLabel(status)}</span>
+    <Card className="mb-3">
+      <Card.Body className="py-3">
+        <Row className="align-items-center">
+          {/* Estadísticas principales compactas */}
+          <Col md={8}>
+            <Row className="g-3">
+              <Col sm={6} md={3}>
+                <div className="d-flex align-items-center">
+                  <div className="bg-primary text-white rounded d-flex align-items-center justify-content-center me-2" 
+                       style={{ width: '2rem', height: '2rem' }}>
+                    <FontAwesomeIcon icon={faTasks} size="sm" />
                   </div>
-                  <span className="fw-bold">{count}</span>
-                </div>
-              );
-            })}
-          </Card.Body>
-        </Card>
-      </Col>
-
-      {/* Top equipos */}
-      <Col lg={4} className="mb-3">
-        <Card className="h-100">
-          <Card.Header>
-            <h6 className="mb-0">Top Equipos</h6>
-          </Card.Header>
-          <Card.Body>
-            {topTeams.length > 0 ? (
-              topTeams.map(([team, count], index) => (
-                <div key={team} className="d-flex justify-content-between align-items-center mb-2">
-                  <div className="d-flex align-items-center">
-                    <span className={`badge bg-${index === 0 ? 'primary' : index === 1 ? 'secondary' : 'light'} me-2`}>
-                      {index + 1}
-                    </span>
-                    <span className="small">{team}</span>
+                  <div>
+                    <div className="fw-bold h6 mb-0">{stats.totalTasks}</div>
+                    <div className="text-muted small">Tareas</div>
                   </div>
-                  <span className="fw-bold">{count}</span>
                 </div>
-              ))
-            ) : (
-              <p className="text-muted small mb-0">No hay datos disponibles</p>
-            )}
-          </Card.Body>
-        </Card>
-      </Col>
-
-      {/* Top departamentos */}
-      <Col lg={4} className="mb-3">
-        <Card className="h-100">
-          <Card.Header>
-            <h6 className="mb-0">Top Departamentos</h6>
-          </Card.Header>
-          <Card.Body>
-            {topDepartments.length > 0 ? (
-              topDepartments.map(([department, count], index) => (
-                <div key={department} className="d-flex justify-content-between align-items-center mb-2">
-                  <div className="d-flex align-items-center">
-                    <span className={`badge bg-${index === 0 ? 'primary' : index === 1 ? 'secondary' : 'light'} me-2`}>
-                      {index + 1}
-                    </span>
-                    <span className="small">{department}</span>
+              </Col>
+              
+              <Col sm={6} md={3}>
+                <div className="d-flex align-items-center">
+                  <div className="bg-success text-white rounded d-flex align-items-center justify-content-center me-2" 
+                       style={{ width: '2rem', height: '2rem' }}>
+                    <FontAwesomeIcon icon={faUsers} size="sm" />
                   </div>
-                  <span className="fw-bold">{count}</span>
+                  <div>
+                    <div className="fw-bold h6 mb-0">{Object.keys(stats.tasksByTeam).length}</div>
+                    <div className="text-muted small">Equipos</div>
+                  </div>
                 </div>
-              ))
-            ) : (
-              <p className="text-muted small mb-0">No hay datos disponibles</p>
-            )}
-          </Card.Body>
-        </Card>
-      </Col>
-    </Row>
+              </Col>
+              
+              <Col sm={6} md={3}>
+                <div className="d-flex align-items-center">
+                  <div className="bg-warning text-white rounded d-flex align-items-center justify-content-center me-2" 
+                       style={{ width: '2rem', height: '2rem' }}>
+                    <FontAwesomeIcon icon={faBuilding} size="sm" />
+                  </div>
+                  <div>
+                    <div className="fw-bold h6 mb-0">{Object.keys(stats.tasksByDepartment).length}</div>
+                    <div className="text-muted small">Deptos</div>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col sm={6} md={3}>
+                <div className="d-flex align-items-center">
+                  <div className="bg-info text-white rounded d-flex align-items-center justify-content-center me-2" 
+                       style={{ width: '2rem', height: '2rem' }}>
+                    <FontAwesomeIcon icon={faCalendarAlt} size="sm" />
+                  </div>
+                  <div>
+                    <div className="fw-bold small mb-0">{formatDateRange(stats.timeRange)}</div>
+                    <div className="text-muted small">Período</div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Col>
+
+          {/* Distribución por estado compacta */}
+          <Col md={4}>
+            <div className="border-start ps-3">
+              <div className="fw-semibold small mb-2 text-muted">Estados:</div>
+              <div className="d-flex flex-wrap gap-2">
+                {Object.entries(stats.tasksByStatus).map(([status, count]) => {
+                  if (count === 0) return null;
+                  return (
+                    <div key={status} className="d-flex align-items-center">
+                      <div 
+                        className={`bg-${getStatusColor(status)} rounded me-1`}
+                        style={{ width: '8px', height: '8px' }}
+                      ></div>
+                      <span className="small me-1">{getStatusLabel(status)}:</span>
+                      <span className="fw-bold small">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Top equipos y departamentos en línea */}
+              {(topTeams.length > 0 || topDepartments.length > 0) && (
+                <div className="mt-2">
+                  {topTeams.length > 0 && (
+                    <div className="small text-muted">
+                      <strong>Top Equipos:</strong> {topTeams.slice(0, 2).map(([team, count]) => `${team} (${count})`).join(', ')}
+                    </div>
+                  )}
+                  {topDepartments.length > 0 && (
+                    <div className="small text-muted">
+                      <strong>Top Deptos:</strong> {topDepartments.slice(0, 2).map(([dept, count]) => `${dept} (${count})`).join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </Col>
+        </Row>
+      </Card.Body>
+    </Card>
   );
 };
 
