@@ -1077,13 +1077,29 @@ const getCurrentProjects = async (equipoId) => {
           }
         }
 
-        // Obtener nombre del departamento
+        // Obtener nombre del departamento desde campos personalizados de Redmine
         let departmentName = 'Sin Departamento';
-        if (redmineTask.issue?.project?.id) {
+        console.log(`🔍 Buscando departamento para tarea ${asignacion.tarea.redmineTaskId}:`, {
+          customFields: redmineTask.issue?.custom_fields?.map(cf => `${cf.name}="${cf.value}"`).join(', ')
+        });
+        
+        // Extraer departamento de campos personalizados (misma lógica que combineTasksWithExtendedData)
+        const customFields = redmineTask.issue?.custom_fields || [];
+        const departamentoNombre = customFields.find(cf => 
+          cf.name && cf.name.toLowerCase() === 'departamento'
+        )?.value;
+        
+        if (departamentoNombre) {
           try {
             const departamento = await prisma.departamento.findFirst({
-              where: { redmineProjectId: redmineTask.issue.project.id }
+              where: { 
+                nombre: {
+                  equals: departamentoNombre,
+                  mode: 'insensitive'
+                }
+              }
             });
+            console.log(`🔍 Departamento encontrado:`, departamento);
             if (departamento) {
               departmentName = departamento.nombre;
             }
