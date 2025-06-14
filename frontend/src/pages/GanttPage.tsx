@@ -4,7 +4,7 @@ import { GanttService, GanttTask, GanttFilters } from '../services/ganttService'
 import GanttFiltersComponent from '../components/gantt/GanttFilters';
 import GanttStats from '../components/gantt/GanttStats';
 import GanttControls from '../components/gantt/GanttControls';
-import GanttTeamLegend from '../components/gantt/GanttTeamLegend';
+
 import './GanttPage.css';
 
 // Declaración de tipo para Frappe Gantt
@@ -97,6 +97,8 @@ const GanttPage: React.FC = () => {
     }
   };
   
+
+
   // Crear o actualizar el diagrama Gantt
   const createGanttChart = (ganttTasks: GanttTask[]) => {
     console.log('createGanttChart called with:', ganttTasks.length, 'tasks');
@@ -131,16 +133,13 @@ const GanttPage: React.FC = () => {
         date_format: 'YYYY-MM-DD',
         language: 'es',
         custom_popup_html: function(task: any) {
-          // Popup personalizado con información detallada
+          // Popup personalizado con información básica
           return `
             <div class="gantt-popup">
               <h6>${task.name}</h6>
-              <p><strong>Equipo:</strong> ${task.team || 'Sin asignar'}</p>
-              <p><strong>Departamento:</strong> ${task.department || 'Sin asignar'}</p>
               <p><strong>Inicio:</strong> ${new Date(task.start).toLocaleDateString('es-ES')}</p>
               <p><strong>Fin:</strong> ${new Date(task.end).toLocaleDateString('es-ES')}</p>
               <p><strong>Progreso:</strong> ${task.progress}%</p>
-              ${task.loadFactor ? `<p><strong>Factor de Carga:</strong> ${task.loadFactor}</p>` : ''}
             </div>
           `;
         },
@@ -151,6 +150,8 @@ const GanttPage: React.FC = () => {
           console.log('Progress changed:', task.id, progress);
         }
       });
+      
+
       
       console.log('Gantt chart created successfully:', ganttInstanceRef.current);
     } catch (err) {
@@ -270,14 +271,7 @@ const GanttPage: React.FC = () => {
         </Col>
       </Row>
       
-      {/* Leyenda de Equipos */}
-      {tasks.length > 0 && (
-        <Row className="mb-3">
-          <Col>
-            <GanttTeamLegend teams={GanttService.getTeamLegend(tasks)} />
-          </Col>
-        </Row>
-      )}
+
       
       {/* Diagrama Gantt - Parte inferior */}
       <Row>
