@@ -4,6 +4,7 @@ import { GanttService, GanttTask, GanttFilters } from '../services/ganttService'
 import GanttFiltersComponent from '../components/gantt/GanttFilters';
 import GanttStats from '../components/gantt/GanttStats';
 import GanttControls from '../components/gantt/GanttControls';
+import GanttTeamLegend from '../components/gantt/GanttTeamLegend';
 import './GanttPage.css';
 
 // Declaración de tipo para Frappe Gantt
@@ -77,20 +78,15 @@ const GanttPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      console.log('Loading Gantt data with filters:', filters);
       const ganttTasks = await GanttService.getGanttTasks(filters);
-      console.log('Gantt tasks loaded:', ganttTasks.length, ganttTasks);
       setTasks(ganttTasks);
       
       // Recrear el Gantt cuando cambien las tareas
       if (ganttTasks.length > 0 && typeof (window as any).Gantt !== 'undefined') {
-        console.log('Creating Gantt chart with tasks:', ganttTasks);
         // Usar setTimeout para asegurar que el DOM esté completamente renderizado
         setTimeout(() => {
           createGanttChart(ganttTasks);
         }, 100);
-      } else {
-        console.log('Not creating Gantt chart. Tasks length:', ganttTasks.length, 'Gantt available:', typeof (window as any).Gantt !== 'undefined');
       }
       
     } catch (err) {
@@ -273,6 +269,15 @@ const GanttPage: React.FC = () => {
           />
         </Col>
       </Row>
+      
+      {/* Leyenda de Equipos */}
+      {tasks.length > 0 && (
+        <Row className="mb-3">
+          <Col>
+            <GanttTeamLegend teams={GanttService.getTeamLegend(tasks)} />
+          </Col>
+        </Row>
+      )}
       
       {/* Diagrama Gantt - Parte inferior */}
       <Row>

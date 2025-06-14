@@ -108,6 +108,54 @@ const getTaskClassFromStatus = (status: string): string => {
   }
 };
 
+// Paleta de colores para equipos
+const TEAM_COLORS = [
+  '#3498db', // Azul
+  '#e74c3c', // Rojo
+  '#2ecc71', // Verde
+  '#f39c12', // Naranja
+  '#9b59b6', // Púrpura
+  '#1abc9c', // Turquesa
+  '#e67e22', // Naranja oscuro
+  '#34495e', // Azul grisáceo
+  '#f1c40f', // Amarillo
+  '#95a5a6', // Gris
+  '#16a085', // Verde azulado
+  '#8e44ad', // Púrpura oscuro
+  '#2980b9', // Azul oscuro
+  '#27ae60', // Verde oscuro
+  '#d35400'  // Naranja rojizo
+];
+
+// Cache para colores de equipos
+const teamColorCache = new Map<string, string>();
+
+// Función para obtener un color único para cada equipo
+const getTeamColor = (teamName: string): string => {
+  if (!teamName || teamName === 'Sin Equipo') {
+    return '#bdc3c7'; // Gris claro para tareas sin equipo
+  }
+  
+  // Si ya tenemos un color asignado para este equipo, lo devolvemos
+  if (teamColorCache.has(teamName)) {
+    return teamColorCache.get(teamName)!;
+  }
+  
+  // Asignar un nuevo color basado en el número de equipos ya registrados
+  const colorIndex = teamColorCache.size % TEAM_COLORS.length;
+  const color = TEAM_COLORS[colorIndex];
+  
+  teamColorCache.set(teamName, color);
+  return color;
+};
+
+// Función para generar clase CSS personalizada por equipo
+const getTaskClassFromTeam = (teamName: string, status: string): string => {
+  const baseClass = getTaskClassFromStatus(status);
+  const teamClass = teamName ? `gantt-team-${teamName.toLowerCase().replace(/\s+/g, '-')}` : 'gantt-no-team';
+  return `${baseClass} ${teamClass}`;
+};
+
 // Función para obtener el nombre del departamento
 const getDepartmentName = async (departmentId: number): Promise<string> => {
   return await getDepartmentNameById(departmentId);
@@ -120,6 +168,93 @@ const getTeamName = async (teamId?: number): Promise<string> => {
 };
 
 export class GanttService {
+  /**
+   * Generar estilos CSS dinámicos para los equipos
+   */
+  static generateTeamStyles(): string {
+    let styles = '';
+    
+    teamColorCache.forEach((color, teamName) => {
+      const teamClass = teamName.toLowerCase().replace(/\s+/g, '-');
+      styles += `
+        .gantt-team-${teamClass} .bar {
+          fill: ${color} !important;
+        }
+        .gantt-team-${teamClass} .bar-progress {
+          fill: ${color} !important;
+          opacity: 0.8;
+        }
+        .gantt-team-${teamClass} .bar-label {
+          fill: white !important;
+          font-weight: bold;
+        }
+      `;
+    });
+    
+    // Estilo para tareas sin equipo
+    styles += `
+      .gantt-no-team .bar {
+        fill: #bdc3c7 !important;
+      }
+      .gantt-no-team .bar-progress {
+        fill: #bdc3c7 !important;
+        opacity: 0.8;
+      }
+      .gantt-no-team .bar-label {
+        fill: white !important;
+      }
+    `;
+    
+    return styles;
+  }
+
+  /**
+   * Aplicar estilos CSS dinámicos al documento
+   */
+  static applyTeamStyles(): void {
+    // Remover estilos anteriores si existen
+    const existingStyle = document.getElementById('gantt-team-styles');
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+    
+    // Crear y aplicar nuevos estilos
+    const styleElement = document.createElement('style');
+    styleElement.id = 'gantt-team-styles';
+    styleElement.textContent = this.generateTeamStyles();
+    document.head.appendChild(styleElement);
+  }
+
+  /**
+   * Obtener información de la leyenda de equipos
+   */
+  static getTeamLegend(tasks: GanttTask[]): { teamName: string; color: string; taskCount: number }[] {
+    const teamCounts = new Map<string, number>();
+    
+    // Contar tareas por equipo
+    tasks.forEach(task => {
+      const teamName = task.team || 'Sin Equipo';
+      teamCounts.set(teamName, (teamCounts.get(teamName) || 0) + 1);
+    });
+    
+    // Crear array de leyenda
+    const legend: { teamName: string; color: string; taskCount: number }[] = [];
+    
+    teamCounts.forEach((count, teamName) => {
+      const color = getTeamColor(teamName);
+      legend.push({
+        teamName,
+        color,
+        taskCount: count
+      });
+    });
+    
+    // Ordenar por nombre de equipo
+    legend.sort((a, b) => a.teamName.localeCompare(b.teamName));
+    
+    return legend;
+  }
+
   /**
    * Obtener tareas formateadas para el Gantt
    */
@@ -197,7 +332,7 @@ export class GanttService {
            start: formatDateForGantt(new Date(task.startDate)),
            end: formatDateForGantt(new Date(task.endDate)),
            progress: calculateTaskProgress(task),
-           custom_class: getTaskClassFromStatus(task.status),
+           custom_class: getTaskClassFromTeam(teamName, task.status),
            team: teamName,
            department: departmentName,
            priority: task.priority,
@@ -210,7 +345,9 @@ export class GanttService {
        // Ordenar por fecha de inicio
        ganttTasks.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
     
-       console.log('Final Gantt tasks to return:', ganttTasks.length, ganttTasks);
+       // Aplicar estilos CSS dinámicos para los equipos
+       this.applyTeamStyles();
+    
        return ganttTasks;
      } catch (error) {
        console.error('Error loading Gantt tasks:', error);
