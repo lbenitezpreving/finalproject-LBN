@@ -15,6 +15,7 @@ import { getDepartmentNameById } from '../../../services/dataAdapters';
 
 import TeamRecommendationsList from './TeamRecommendationsList';
 import PlanningForm from './PlanningForm';
+import AlgorithmExplanation from './AlgorithmExplanation';
 import './TaskPlanningPage.css';
 
 interface ConflictInfo {
@@ -242,6 +243,11 @@ const TaskPlanningPage: React.FC = () => {
           </Row>
         </Card.Body>
       </Card>
+
+      {/* Explicación del Algoritmo de Recomendación */}
+      {step === 'recommendations' && (
+        <AlgorithmExplanation />
+      )}
 
       {/* Contenido principal según el paso */}
       {step === 'recommendations' && (
