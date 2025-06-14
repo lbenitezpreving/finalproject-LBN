@@ -1,4 +1,4 @@
-import { Task, TaskStatus, Team, Department, User } from '../types';
+import { Task, TaskStatus, Team, Department, User, CurrentProject, TeamRecommendation } from '../types';
 
 /**
  * Adaptador para convertir datos del backend al formato esperado por el frontend
@@ -445,4 +445,57 @@ export const getAllTeamsWithCurrentLoad = async (): Promise<Team[]> => {
     console.error('Error getting teams with current load:', error);
     return [];
   }
+};
+
+/**
+ * Adapta un proyecto actual del backend al formato del frontend
+ */
+export const adaptBackendCurrentProject = (backendProject: any): CurrentProject => {
+  return {
+    id: backendProject.id,
+    name: backendProject.name,
+    startDate: new Date(backendProject.startDate),
+    endDate: new Date(backendProject.endDate),
+    status: backendProject.status,
+    loadFactor: backendProject.loadFactor || 1,
+    sprints: backendProject.sprints,
+    department: backendProject.department || 'Sin Departamento'
+  };
+};
+
+/**
+ * Adapta una recomendación de equipo del backend al formato del frontend
+ */
+export const adaptBackendTeamRecommendation = (backendRecommendation: any): TeamRecommendation => {
+  return {
+    teamId: backendRecommendation.teamId,
+    teamName: backendRecommendation.teamName,
+    isExternal: backendRecommendation.isExternal,
+    currentLoad: backendRecommendation.currentLoad,
+    capacity: backendRecommendation.capacity,
+    affinity: backendRecommendation.affinity,
+    possibleStartDate: backendRecommendation.possibleStartDate,
+    possibleEndDate: backendRecommendation.possibleEndDate,
+    recommendationScore: backendRecommendation.recommendationScore,
+    currentProjects: (backendRecommendation.currentProjects || []).map(adaptBackendCurrentProject)
+  };
+};
+
+/**
+ * Adapta la respuesta de recomendaciones del backend
+ */
+export const adaptBackendRecommendationsResponse = (backendResponse: any): TeamRecommendation[] => {
+  if (!backendResponse.success || !backendResponse.data) {
+    console.warn('Invalid recommendations response format:', backendResponse);
+    return [];
+  }
+  
+  const recommendations = backendResponse.data;
+  
+  if (!Array.isArray(recommendations)) {
+    console.warn('Recommendations is not an array:', recommendations);
+    return [];
+  }
+  
+  return recommendations.map(adaptBackendTeamRecommendation);
 }; 

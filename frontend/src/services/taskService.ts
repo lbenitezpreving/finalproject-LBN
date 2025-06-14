@@ -1,6 +1,6 @@
 import { Task, TaskStatus, Team, Department, User, UserRole, PaginatedResponse, SearchParams, SortConfig, TaskFilters, CurrentProject, TeamRecommendation } from '../types';
 import { taskService } from './api';
-import { adaptBackendTasksResponse, adaptBackendTask, adaptFiltersToBackend, adaptBackendStats, adaptBackendUsersResponse } from './dataAdapters';
+import { adaptBackendTasksResponse, adaptBackendTask, adaptFiltersToBackend, adaptBackendStats, adaptBackendUsersResponse, adaptBackendRecommendationsResponse } from './dataAdapters';
 import { getTasksWithStage, getTaskStage } from './mockData/tasks';
 // TODO: Reimplementar cuando esté disponible el servicio de matriz de afinidad
 // import { getAffinityByTeamAndDepartment } from './mockData/affinityMatrix';
@@ -38,6 +38,7 @@ const adaptTaskToCurrentProject = async (task: Task): Promise<CurrentProject> =>
     endDate: task.endDate || new Date(),
     status,
     loadFactor: task.loadFactor || 1,
+    sprints: task.sprints, // Incluir estimación en sprints
     department: department?.name || 'Sin Departamento'
   };
 };
@@ -387,7 +388,8 @@ export class TaskService {
         throw new Error('Error al obtener recomendaciones');
       }
       
-      return response.data;
+      // Adaptar la respuesta del backend al formato del frontend
+      return adaptBackendRecommendationsResponse(response);
       
     } catch (error) {
       console.error('Error al obtener recomendaciones del backend:', error);

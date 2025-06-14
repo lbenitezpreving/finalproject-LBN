@@ -7,7 +7,8 @@ import {
   faCalendarAlt, 
   faClock,
   faUser,
-  faBuilding
+  faBuilding,
+  faLayerGroup
 } from '@fortawesome/free-solid-svg-icons';
 import { CurrentProject } from '../../../types';
 import './CurrentProjectsList.css';
@@ -111,7 +112,10 @@ const CurrentProjectsList: React.FC<CurrentProjectsListProps> = ({ projects, tea
                   <small>
                     <strong>{project.name}</strong>
                     <span className="text-muted ms-1">
-                      ({formatDate(project.startDate)} - {formatDate(project.endDate)})
+                      ({project.department || 'Sin Depto'})
+                    </span>
+                    <span className="text-muted ms-1">
+                      - {project.loadFactor} trab., {project.sprints || '?'} sprints
                     </span>
                   </small>
                 </div>
@@ -159,20 +163,29 @@ const CurrentProjectsList: React.FC<CurrentProjectsListProps> = ({ projects, tea
                   </div>
                 </Col>
                 
-                <Col sm={6}>
+                <Col sm={4}>
                   <div className="project-info">
                     <FontAwesomeIcon icon={faBuilding} className="me-1 text-muted" />
                     <small>
-                      <strong>Depto:</strong> {project.department}
+                      <strong>Depto:</strong> {project.department || 'Sin Departamento'}
                     </small>
                   </div>
                 </Col>
                 
-                <Col sm={6}>
+                <Col sm={4}>
                   <div className="project-info">
                     <FontAwesomeIcon icon={faUser} className="me-1 text-muted" />
                     <small>
-                      <strong>Carga:</strong> {project.loadFactor} ({getDurationText(project.startDate, project.endDate)})
+                      <strong>Carga:</strong> {project.loadFactor} trabajador{project.loadFactor !== 1 ? 'es' : ''}
+                    </small>
+                  </div>
+                </Col>
+                
+                <Col sm={4}>
+                  <div className="project-info">
+                    <FontAwesomeIcon icon={faLayerGroup} className="me-1 text-muted" />
+                    <small>
+                      <strong>Sprints:</strong> {project.sprints || 'No estimado'}
                     </small>
                   </div>
                 </Col>

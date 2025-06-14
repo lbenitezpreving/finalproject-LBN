@@ -80,6 +80,7 @@ export interface CurrentProject {
   endDate: Date;
   status: 'doing' | 'demo' | 'todo';
   loadFactor: number; // Factor de carga que consume del equipo
+  sprints?: number; // Estimación en sprints de la tarea original
   department: string; // Nombre del departamento (Task.department se convierte a string)
 }
 

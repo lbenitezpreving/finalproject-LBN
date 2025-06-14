@@ -1054,7 +1054,7 @@ const getCurrentProjects = async (equipoId) => {
     }
   });
 
-  // Obtener información de las tareas de Redmine para tener el nombre
+  // Obtener información completa de las tareas incluyendo datos de Redmine y departamento
   const projects = await Promise.all(
     asignaciones.map(async (asignacion) => {
       try {
@@ -1077,13 +1077,30 @@ const getCurrentProjects = async (equipoId) => {
           }
         }
 
+        // Obtener nombre del departamento
+        let departmentName = 'Sin Departamento';
+        if (redmineTask.issue?.project?.id) {
+          try {
+            const departamento = await prisma.departamento.findFirst({
+              where: { redmineProjectId: redmineTask.issue.project.id }
+            });
+            if (departamento) {
+              departmentName = departamento.nombre;
+            }
+          } catch (deptError) {
+            console.error('Error al obtener departamento:', deptError);
+          }
+        }
+
         return {
           id: asignacion.tarea.redmineTaskId,
           name: redmineTask.issue?.subject || `Tarea #${asignacion.tarea.redmineTaskId}`,
           startDate: asignacion.tarea.fechaInicioPlanificada,
           endDate: asignacion.tarea.fechaFinPlanificada,
           status: status,
-          loadFactor: asignacion.tarea.factorCarga || 1
+          loadFactor: asignacion.tarea.factorCarga || 1,
+          sprints: asignacion.tarea.estimacionSprints,
+          department: departmentName
         };
       } catch (error) {
         console.error(`Error al obtener tarea ${asignacion.tarea.redmineTaskId}:`, error);
@@ -1093,7 +1110,9 @@ const getCurrentProjects = async (equipoId) => {
           startDate: asignacion.tarea.fechaInicioPlanificada,
           endDate: asignacion.tarea.fechaFinPlanificada,
           status: 'doing',
-          loadFactor: asignacion.tarea.factorCarga || 1
+          loadFactor: asignacion.tarea.factorCarga || 1,
+          sprints: asignacion.tarea.estimacionSprints,
+          department: 'Sin Departamento'
         };
       }
     })
