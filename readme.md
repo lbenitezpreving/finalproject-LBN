@@ -1,3 +1,13 @@
+## Video demostración del proyecto
+
+Puedes ver una demostración completa del funcionamiento de TaskDistributor en el siguiente enlace:
+
+[🎥 Video demostración - TaskDistributor](https://github.com/loretops/finalproject-LPS/blob/main/docs/videos/acceso_manager.mov)
+
+El video muestra la experiencia del usuario desde que accede a la aplicación, incluyendo todas las funcionalidades principales implementadas.
+
+---
+
 ## Índice
 
 0. [Ficha del proyecto](#0-ficha-del-proyecto)
