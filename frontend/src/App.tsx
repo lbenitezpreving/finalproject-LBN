@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import TaskManagement from './pages/TaskManagement';
 import TaskPlanningPage from './components/tasks/planning/TaskPlanningPage';
 import GanttPage from './pages/GanttPage';
+import AlertsPage from './pages/AlertsPage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -93,6 +94,17 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <MainLayout>
               <GanttPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/alerts" 
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <AlertsPage />
             </MainLayout>
           </ProtectedRoute>
         } 
