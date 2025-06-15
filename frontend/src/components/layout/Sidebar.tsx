@@ -6,7 +6,8 @@ import {
   faTasks, 
   faChartGantt, 
   faChartLine,
-  faBell
+  faBell,
+  faUsers
 } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../../context/AuthContext';
 import './Sidebar.css';
@@ -35,6 +36,11 @@ const Sidebar: React.FC = () => {
         <Nav.Link as={NavLink} to="/gantt" className="sidebar-link">
           <FontAwesomeIcon icon={faChartGantt} className="sidebar-icon" />
           Gantt
+        </Nav.Link>
+        
+        <Nav.Link as={NavLink} to="/teams/capacity" className="sidebar-link">
+          <FontAwesomeIcon icon={faUsers} className="sidebar-icon" />
+          Capacidad Equipos
         </Nav.Link>
         
         <Nav.Link as={NavLink} to="/alerts" className="sidebar-link">

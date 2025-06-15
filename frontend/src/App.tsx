@@ -8,6 +8,7 @@ import TaskManagement from './pages/TaskManagement';
 import TaskPlanningPage from './components/tasks/planning/TaskPlanningPage';
 import GanttPage from './pages/GanttPage';
 import AlertsPage from './pages/AlertsPage';
+import TeamCapacityPage from './pages/TeamCapacityPage';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -105,6 +106,17 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <MainLayout>
               <AlertsPage />
+            </MainLayout>
+          </ProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/teams/capacity" 
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <TeamCapacityPage />
             </MainLayout>
           </ProtectedRoute>
         } 

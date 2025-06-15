@@ -118,6 +118,11 @@ export const teamService = {
     return response.data;
   },
   
+  getTeamCapacity: async () => {
+    const response = await api.get('/equipos/capacidad');
+    return response.data;
+  },
+  
   updateTeam: async (id: number, teamData: any) => {
     const response = await api.put(`/equipos/${id}`, teamData);
     return response.data;

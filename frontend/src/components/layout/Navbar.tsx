@@ -21,6 +21,7 @@ const Navbar: React.FC = () => {
             <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
             <Nav.Link as={Link} to="/tasks">Tareas</Nav.Link>
             <Nav.Link as={Link} to="/gantt">Gantt</Nav.Link>
+            <Nav.Link as={Link} to="/teams/capacity">Capacidad Equipos</Nav.Link>
             <Nav.Link as={Link} to="/alerts">Alertas</Nav.Link>
           </Nav>
           {user && (

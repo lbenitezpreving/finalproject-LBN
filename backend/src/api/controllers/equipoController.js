@@ -218,8 +218,145 @@ const getEquipoStats = async (req, res) => {
   }
 };
 
+/**
+ * Obtener capacidad de equipos con carga actual y disponibilidad futura
+ * GET /api/equipos/capacidad
+ */
+const getCapacidadEquipos = async (req, res) => {
+  try {
+    // Obtener todos los equipos activos
+    const equipos = await prisma.equipo.findMany({
+      where: { activo: true },
+      include: {
+        asignaciones: {
+          include: {
+            tarea: {
+              select: {
+                id: true,
+                redmineTaskId: true,
+                factorCarga: true,
+                estimacionSprints: true,
+                fechaInicioPlanificada: true,
+                fechaFinPlanificada: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Fecha actual y límite de 3 meses hacia el futuro
+    const now = new Date();
+    const futureLimit = new Date();
+    futureLimit.setMonth(futureLimit.getMonth() + 3);
+
+    const capacidadEquipos = equipos.map(equipo => {
+      // Filtrar asignaciones activas (tareas en curso o futuras)
+      const asignacionesActivas = equipo.asignaciones.filter(asignacion => {
+        const tarea = asignacion.tarea;
+        // Solo considerar tareas con fechas planificadas
+        if (!tarea.fechaFinPlanificada) return false;
+        
+        // Filtrar tareas que no han terminado aún
+        return new Date(tarea.fechaFinPlanificada) >= now;
+      });
+
+      // Calcular carga actual total
+      const cargaActual = asignacionesActivas.reduce((total, asignacion) => {
+        return total + (asignacion.tarea.factorCarga || 0);
+      }, 0);
+
+      // Calcular disponibilidad como porcentaje
+      const porcentajeOcupacion = equipo.capacidad > 0 ? 
+        Math.round((cargaActual / equipo.capacidad) * 100) : 0;
+
+      // Determinar estado de sobrecarga
+      let estadoSobrecarga = 'normal';
+      if (porcentajeOcupacion > 100) {
+        estadoSobrecarga = 'critico';
+      } else if (porcentajeOcupacion > 90) {
+        estadoSobrecarga = 'advertencia';
+      }
+
+      // Calcular próxima fecha disponible
+      let proximaFechaDisponible = now;
+      if (asignacionesActivas.length > 0) {
+        const fechasFinalizacion = asignacionesActivas
+          .map(a => new Date(a.tarea.fechaFinPlanificada))
+          .filter(fecha => fecha > now)
+          .sort((a, b) => a - b);
+        
+        if (fechasFinalizacion.length > 0) {
+          proximaFechaDisponible = fechasFinalizacion[fechasFinalizacion.length - 1];
+        }
+      }
+
+      // Obtener tareas actuales con información relevante
+      const tareasActuales = asignacionesActivas.map(asignacion => ({
+        id: asignacion.tarea.id,
+        redmineTaskId: asignacion.tarea.redmineTaskId,
+        factorCarga: asignacion.tarea.factorCarga,
+        estimacionSprints: asignacion.tarea.estimacionSprints,
+        fechaInicio: asignacion.tarea.fechaInicioPlanificada,
+        fechaFin: asignacion.tarea.fechaFinPlanificada,
+        fechaAsignacion: asignacion.fechaAsignacion
+      }));
+
+      return {
+        id: equipo.id,
+        nombre: equipo.nombre,
+        tipo: equipo.tipo,
+        capacidadTotal: equipo.capacidad,
+        cargaActual: cargaActual,
+        disponibilidad: Math.max(0, equipo.capacidad - cargaActual),
+        porcentajeOcupacion: porcentajeOcupacion,
+        estadoSobrecarga: estadoSobrecarga,
+        proximaFechaDisponible: proximaFechaDisponible,
+        totalTareasAsignadas: asignacionesActivas.length,
+        tareasActuales: tareasActuales
+      };
+    });
+
+    // Ordenar por porcentaje de ocupación descendente
+    capacidadEquipos.sort((a, b) => b.porcentajeOcupacion - a.porcentajeOcupacion);
+
+    // Calcular estadísticas generales
+    const stats = {
+      totalEquipos: capacidadEquipos.length,
+      equiposSobrecargados: capacidadEquipos.filter(e => e.estadoSobrecarga === 'critico').length,
+      equiposEnAdvertencia: capacidadEquipos.filter(e => e.estadoSobrecarga === 'advertencia').length,
+      equiposDisponibles: capacidadEquipos.filter(e => e.estadoSobrecarga === 'normal' && e.disponibilidad > 0).length,
+      capacidadTotalSistema: capacidadEquipos.reduce((total, equipo) => total + equipo.capacidadTotal, 0),
+      cargaTotalSistema: capacidadEquipos.reduce((total, equipo) => total + equipo.cargaActual, 0)
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: 'Capacidad de equipos obtenida correctamente',
+      data: {
+        equipos: capacidadEquipos,
+        estadisticas: stats,
+        fechaConsulta: now,
+        periodoAnalisis: {
+          desde: now,
+          hasta: futureLimit
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en getCapacidadEquipos:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor al obtener capacidad de equipos',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   getEquipos,
   getEquipoById,
-  getEquipoStats
+  getEquipoStats,
+  getCapacidadEquipos
 }; 

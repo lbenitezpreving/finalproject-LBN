@@ -209,11 +209,99 @@ const router = express.Router();
  *         description: Error interno del servidor
  */
 
+/**
+ * @swagger
+ * /api/equipos/capacidad:
+ *   get:
+ *     summary: Obtener capacidad y carga actual de todos los equipos
+ *     tags: [Equipos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Capacidad de equipos obtenida correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     equipos:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           nombre:
+ *                             type: string
+ *                           tipo:
+ *                             type: string
+ *                           capacidadTotal:
+ *                             type: number
+ *                           cargaActual:
+ *                             type: number
+ *                           disponibilidad:
+ *                             type: number
+ *                           porcentajeOcupacion:
+ *                             type: integer
+ *                           estadoSobrecarga:
+ *                             type: string
+ *                             enum: [normal, advertencia, critico]
+ *                           proximaFechaDisponible:
+ *                             type: string
+ *                             format: date-time
+ *                           totalTareasAsignadas:
+ *                             type: integer
+ *                           tareasActuales:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                     estadisticas:
+ *                       type: object
+ *                       properties:
+ *                         totalEquipos:
+ *                           type: integer
+ *                         equiposSobrecargados:
+ *                           type: integer
+ *                         equiposEnAdvertencia:
+ *                           type: integer
+ *                         equiposDisponibles:
+ *                           type: integer
+ *                         capacidadTotalSistema:
+ *                           type: number
+ *                         cargaTotalSistema:
+ *                           type: number
+ *                     fechaConsulta:
+ *                       type: string
+ *                       format: date-time
+ *                     periodoAnalisis:
+ *                       type: object
+ *                       properties:
+ *                         desde:
+ *                           type: string
+ *                           format: date-time
+ *                         hasta:
+ *                           type: string
+ *                           format: date-time
+ *       401:
+ *         description: No autorizado
+ *       500:
+ *         description: Error interno del servidor
+ */
+
 // Aplicar middleware de autenticación a todas las rutas
 router.use(authenticate);
 
 // Rutas específicas (deben ir antes de las rutas con parámetros)
 router.get('/stats', equipoController.getEquipoStats);
+router.get('/capacidad', equipoController.getCapacidadEquipos);
 
 // Rutas generales
 router.get('/', equipoController.getEquipos);

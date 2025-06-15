@@ -176,4 +176,48 @@ export interface SavedFilterConfig {
 export interface SortConfig {
   field: string;
   direction: 'asc' | 'desc';
+}
+
+// Tipos para capacidad de equipos (US-10)
+export interface TeamCapacity {
+  id: number;
+  nombre: string;
+  tipo: 'INTERNO' | 'EXTERNO';
+  capacidadTotal: number;
+  cargaActual: number;
+  disponibilidad: number;
+  porcentajeOcupacion: number;
+  estadoSobrecarga: 'normal' | 'advertencia' | 'critico';
+  proximaFechaDisponible: Date;
+  totalTareasAsignadas: number;
+  tareasActuales: TeamTask[];
+}
+
+export interface TeamTask {
+  id: number;
+  redmineTaskId: number;
+  factorCarga: number;
+  estimacionSprints: number;
+  fechaInicio: Date | null;
+  fechaFin: Date | null;
+  fechaAsignacion: Date;
+}
+
+export interface TeamCapacityStats {
+  totalEquipos: number;
+  equiposSobrecargados: number;
+  equiposEnAdvertencia: number;
+  equiposDisponibles: number;
+  capacidadTotalSistema: number;
+  cargaTotalSistema: number;
+}
+
+export interface TeamCapacityResponse {
+  equipos: TeamCapacity[];
+  estadisticas: TeamCapacityStats;
+  fechaConsulta: Date;
+  periodoAnalisis: {
+    desde: Date;
+    hasta: Date;
+  };
 } 
