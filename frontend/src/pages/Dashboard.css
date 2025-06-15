@@ -183,4 +183,21 @@
 /* Resaltar que es una advertencia temporal */
 .alert-warning strong {
   color: #856404;
+}
+
+/* Estilos para advertencias de funcionalidad pendiente */
+.alert-info.alert-dismissible {
+  border-left: 4px solid #0dcaf0;
+  background-color: #d1ecf1;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+}
+
+.alert-info.alert-dismissible .fa-clock {
+  color: #0dcaf0;
+}
+
+/* Resaltar que es información temporal */
+.alert-info strong {
+  color: #055160;
 } 

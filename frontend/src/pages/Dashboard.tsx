@@ -284,36 +284,77 @@ const Dashboard: React.FC = () => {
               Próximas Fechas Límite
             </Card.Header>
             <Card.Body>
-              {upcomingDeadlines.length > 0 ? (
-                <Table striped size="sm">
-                  <thead>
-                    <tr>
-                      <th>Tarea</th>
-                      <th>Departamento</th>
-                      <th>Días Restantes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {upcomingDeadlines.slice(0, 5).map((task) => (
-                      <tr key={task.id}>
-                        <td>
-                          <small className="text-muted">#{task.id}</small>
-                          <br />
-                          {task.subject}
-                        </td>
-                        <td>{task.department}</td>
-                        <td>
-                          <span className={`badge ${task.daysRemaining <= 2 ? 'bg-danger' : task.daysRemaining <= 5 ? 'bg-warning' : 'bg-info'}`}>
-                            {task.daysRemaining} días
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              ) : (
-                <p className="text-muted text-center">No hay fechas límite próximas</p>
-              )}
+              {/* Advertencia de datos pendientes */}
+              <div className="alert alert-info alert-dismissible mb-3" role="alert">
+                <FontAwesomeIcon icon={faClock} className="me-2" />
+                <strong>Funcionalidad pendiente:</strong> Esta sección mostrará las tareas próximas a vencer. 
+                Actualmente muestra datos de ejemplo.
+              </div>
+              
+              {/* Datos mock para demostración */}
+              <Table striped size="sm">
+                <thead>
+                  <tr>
+                    <th>Tarea</th>
+                    <th>Departamento</th>
+                    <th>Días Restantes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <small className="text-muted">#1234</small>
+                      <br />
+                      Sistema de autenticación
+                    </td>
+                    <td>Tecnología</td>
+                    <td>
+                      <span className="badge bg-danger">
+                        2 días
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <small className="text-muted">#1235</small>
+                      <br />
+                      Migración de base de datos
+                    </td>
+                    <td>Tecnología</td>
+                    <td>
+                      <span className="badge bg-warning">
+                        4 días
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <small className="text-muted">#1236</small>
+                      <br />
+                      Análisis de rendimiento
+                    </td>
+                    <td>Calidad</td>
+                    <td>
+                      <span className="badge bg-info">
+                        7 días
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <small className="text-muted">#1237</small>
+                      <br />
+                      Documentación técnica
+                    </td>
+                    <td>Tecnología</td>
+                    <td>
+                      <span className="badge bg-info">
+                        10 días
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </Table>
             </Card.Body>
           </Card>
         </Col>
