@@ -129,6 +129,8 @@
 
 .status-metric small {
   font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Estilos para la tabla de próximas fechas límite */
@@ -164,4 +166,21 @@
   .table-responsive {
     font-size: 0.9rem;
   }
+}
+
+/* Estilos para la advertencia de datos mockeados */
+.alert-warning.alert-dismissible {
+  border-left: 4px solid #fd7e14;
+  background-color: #fff3cd;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+}
+
+.alert-warning.alert-dismissible .fa-exclamation-triangle {
+  color: #fd7e14;
+}
+
+/* Resaltar que es una advertencia temporal */
+.alert-warning strong {
+  color: #856404;
 } 

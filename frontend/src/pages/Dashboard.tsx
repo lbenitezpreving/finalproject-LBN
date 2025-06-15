@@ -228,6 +228,13 @@ const Dashboard: React.FC = () => {
               Alertas Críticas ({metrics.criticalAlerts})
             </Card.Header>
             <Card.Body>
+              {/* Advertencia de datos mockeados */}
+              <div className="alert alert-warning alert-dismissible mb-3" role="alert">
+                <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+                <strong>Datos de prueba:</strong> Las alertas mostradas son datos simulados. 
+                Pendiente de conectar con el sistema de alertas en tiempo real.
+              </div>
+              
               {metrics.alerts.length > 0 ? (
                 <ul className="alert-list">
                   {metrics.alerts.map((alert) => (
