@@ -2,7 +2,7 @@
 
 Puedes ver una demostración completa del funcionamiento de TaskDistributor en el siguiente enlace:
 
-[🎥 Video demostración - TaskDistributor](https://github.com/loretops/finalproject-LPS/blob/main/docs/videos/acceso_manager.mov)
+[🎥 Video demostración - TaskDistributor](https://github.com/lbenitezpreving/finalproject-LBN/tree/main/videopresentacion)
 
 El video muestra la experiencia del usuario desde que accede a la aplicación, incluyendo todas las funcionalidades principales implementadas.
 
