@@ -91,6 +91,7 @@ const Dashboard: React.FC = () => {
     <div className="dashboard">
       <h1 className="mb-4">Dashboard</h1>
       
+      {/* Primera fila: KPIs */}
       <Row className="mb-4">
         <Col md={3}>
           <Card className="dashboard-card">
@@ -157,40 +158,9 @@ const Dashboard: React.FC = () => {
         </Col>
       </Row>
       
-      <Row className="mb-4">
-        {isNegocio && (
-          <Col md={6} className="mb-4">
-            <Card>
-              <Card.Header>
-                <FontAwesomeIcon icon={faTasks} className="me-2" />
-                Tareas por Departamento
-              </Card.Header>
-              <Card.Body>
-                {metrics.departmentDistribution.length > 0 ? (
-                  <div className="department-distribution">
-                    {metrics.departmentDistribution.map((dept, index) => (
-                      <div key={index} className="mb-3">
-                        <div className="d-flex justify-content-between align-items-center mb-1">
-                          <span className="department-name">{dept.department}</span>
-                          <span className="badge bg-primary">{dept.count} tareas</span>
-                        </div>
-                        <ProgressBar 
-                          now={dept.percentage} 
-                          label={`${dept.percentage}%`}
-                          variant={dept.percentage > 20 ? 'primary' : 'secondary'}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted">No hay datos de distribución disponibles.</p>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        )}
-        
-        {isTecnologia && (
+      {/* Segunda fila: Utilización de equipos (izquierda) + Estado de equipos (derecha) */}
+      {isTecnologia && (
+        <Row className="mb-4">
           <Col md={6} className="mb-4">
             <Card>
               <Card.Header>
@@ -237,45 +207,97 @@ const Dashboard: React.FC = () => {
               </Card.Body>
             </Card>
           </Col>
-        )}
-        
-        <Col md={isTecnologia || isNegocio ? 6 : 12} className="mb-4">
-          <Card>
-            <Card.Header>
-              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-              Alertas Críticas ({metrics.criticalAlerts})
-            </Card.Header>
-            <Card.Body>
-              {/* Advertencia de datos mockeados */}
-              <div className="alert alert-warning alert-dismissible mb-3" role="alert">
-                <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-                <strong>Datos de prueba:</strong> Las alertas mostradas son datos simulados. 
-                Pendiente de conectar con el sistema de alertas en tiempo real.
-              </div>
-              
-              {metrics.alerts.length > 0 ? (
-                <ul className="alert-list">
-                  {metrics.alerts.map((alert) => (
-                    <li key={alert.id} className="alert-item">
-                      <span className="alert-icon">
-                        <FontAwesomeIcon icon={faExclamationTriangle} />
-                      </span>
-                      <span className="alert-text">{alert.message}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted text-center">
-                  <FontAwesomeIcon icon={faCheck} className="me-2" />
-                  No hay alertas críticas en este momento
-                </p>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
 
-      {/* Fila adicional con información complementaria */}
+          <Col md={6} className="mb-4">
+            <Card>
+              <Card.Header>
+                <FontAwesomeIcon icon={faUsers} className="me-2" />
+                Estado de Equipos
+              </Card.Header>
+              <Card.Body>
+                {allTeams.length > 0 ? (
+                  <div className="team-status">
+                    <div className="row text-center mb-3">
+                      <div className="col-4">
+                        <div className="status-metric">
+                          <h4 className="text-success">
+                            {allTeams.filter(t => t.utilization < 80).length}
+                          </h4>
+                          <small className="text-muted">Disponibles</small>
+                        </div>
+                      </div>
+                      <div className="col-4">
+                        <div className="status-metric">
+                          <h4 className="text-warning">
+                            {allTeams.filter(t => t.utilization >= 80 && t.utilization <= 100).length}
+                          </h4>
+                          <small className="text-muted">Alta Carga</small>
+                        </div>
+                      </div>
+                      <div className="col-4">
+                        <div className="status-metric">
+                          <h4 className="text-danger">
+                            {allTeams.filter(t => t.utilization > 100).length}
+                          </h4>
+                          <small className="text-muted">Sobrecargados</small>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <small className="text-muted">
+                        Total de equipos activos: <strong>{allTeams.length}</strong>
+                      </small>
+                      <br />
+                      <small className="text-muted">
+                        Utilización promedio global: <strong>{metrics.teamUtilization}%</strong>
+                      </small>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-muted text-center">No hay datos de equipos disponibles</p>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* Fila para usuarios de negocio: Distribución por departamento */}
+      {isNegocio && (
+        <Row className="mb-4">
+          <Col md={12} className="mb-4">
+            <Card>
+              <Card.Header>
+                <FontAwesomeIcon icon={faTasks} className="me-2" />
+                Tareas por Departamento
+              </Card.Header>
+              <Card.Body>
+                {metrics.departmentDistribution.length > 0 ? (
+                  <div className="department-distribution">
+                    {metrics.departmentDistribution.map((dept, index) => (
+                      <div key={index} className="mb-3">
+                        <div className="d-flex justify-content-between align-items-center mb-1">
+                          <span className="department-name">{dept.department}</span>
+                          <span className="badge bg-primary">{dept.count} tareas</span>
+                        </div>
+                        <ProgressBar 
+                          now={dept.percentage} 
+                          label={`${dept.percentage}%`}
+                          variant={dept.percentage > 20 ? 'primary' : 'secondary'}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted">No hay datos de distribución disponibles.</p>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* Tercera fila: Fechas límite (izquierda) + Alertas (derecha) */}
       <Row>
         <Col md={6} className="mb-4">
           <Card>
@@ -362,50 +384,33 @@ const Dashboard: React.FC = () => {
         <Col md={6} className="mb-4">
           <Card>
             <Card.Header>
-              <FontAwesomeIcon icon={faUsers} className="me-2" />
-              Estado de Equipos
+              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+              Alertas Críticas ({metrics.criticalAlerts})
             </Card.Header>
             <Card.Body>
-              {allTeams.length > 0 ? (
-                <div className="team-status">
-                  <div className="row text-center mb-3">
-                    <div className="col-4">
-                      <div className="status-metric">
-                        <h4 className="text-success">
-                          {allTeams.filter(t => t.utilization < 80).length}
-                        </h4>
-                        <small className="text-muted">Disponibles</small>
-                      </div>
-                    </div>
-                    <div className="col-4">
-                      <div className="status-metric">
-                        <h4 className="text-warning">
-                          {allTeams.filter(t => t.utilization >= 80 && t.utilization <= 100).length}
-                        </h4>
-                        <small className="text-muted">Alta Carga</small>
-                      </div>
-                    </div>
-                    <div className="col-4">
-                      <div className="status-metric">
-                        <h4 className="text-danger">
-                          {allTeams.filter(t => t.utilization > 100).length}
-                        </h4>
-                        <small className="text-muted">Sobrecargados</small>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <small className="text-muted">
-                      Total de equipos activos: <strong>{allTeams.length}</strong>
-                    </small>
-                    <br />
-                    <small className="text-muted">
-                      Utilización promedio global: <strong>{metrics.teamUtilization}%</strong>
-                    </small>
-                  </div>
-                </div>
+              {/* Advertencia de datos mockeados */}
+              <div className="alert alert-warning alert-dismissible mb-3" role="alert">
+                <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+                <strong>Datos de prueba:</strong> Las alertas mostradas son datos simulados. 
+                Pendiente de conectar con el sistema de alertas en tiempo real.
+              </div>
+              
+              {metrics.alerts.length > 0 ? (
+                <ul className="alert-list">
+                  {metrics.alerts.map((alert) => (
+                    <li key={alert.id} className="alert-item">
+                      <span className="alert-icon">
+                        <FontAwesomeIcon icon={faExclamationTriangle} />
+                      </span>
+                      <span className="alert-text">{alert.message}</span>
+                    </li>
+                  ))}
+                </ul>
               ) : (
-                <p className="text-muted text-center">No hay datos de equipos disponibles</p>
+                <p className="text-muted text-center">
+                  <FontAwesomeIcon icon={faCheck} className="me-2" />
+                  No hay alertas críticas en este momento
+                </p>
               )}
             </Card.Body>
           </Card>
