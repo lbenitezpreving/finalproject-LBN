@@ -4,7 +4,7 @@ import { getTasksWithStage } from './mockData/tasks';
 // import { mockDepartments, getDepartmentName } from './mockData/departments';
 import { TaskStatus, Alert, AlertType } from '../types';
 import { TaskService } from './taskService';
-import { userService, teamService, departmentService } from './api';
+import { userService, teamService, departmentService, taskService } from './api';
 import { 
   adaptBackendUsersResponse, 
   adaptBackendTeamsResponse, 
@@ -29,6 +29,70 @@ export interface DashboardMetrics {
 }
 
 /**
+ * Obtener tareas reales del backend para calcular carga de equipos
+ */
+const getRealTasksForTeamLoad = async () => {
+  try {
+    // Obtener todas las tareas del backend (el filtro de etapa no funciona correctamente)
+    const response = await taskService.getTasks({
+      limit: 1000
+    });
+    
+    if (!response.success || !response.data) {
+      console.warn('No se pudieron obtener tareas del backend');
+      return [];
+    }
+    
+    const allTasks = response.data.tasks || response.data;
+    
+    // Filtrar manualmente las tareas que tienen equipo asignado y están en etapas activas
+    const activeTasks = allTasks.filter((task: any) => 
+      task.equipo_asignado && 
+      task.equipo_asignado.id &&
+      (task.etapa === 'en_curso' || task.etapa === 'planificada')
+    );
+    
+    // Procesar y adaptar las tareas para el cálculo de carga
+    const processedTasks = activeTasks.map((task: any) => ({
+      id: task.id,
+      team: task.equipo_asignado.id, // Para compatibilidad con calculateTeamCurrentLoad
+      equipo_id: task.equipo_asignado.id, // Campo del backend
+      status: mapBackendStatusToFrontend(task.status),
+      etapa: task.etapa,
+      loadFactor: task.factor_carga || 1, // Para compatibilidad con calculateTeamCurrentLoad
+      factor_carga: task.factor_carga || 1, // Campo del backend
+      subject: task.subject,
+      equipo_asignado: task.equipo_asignado
+    }));
+    
+    return processedTasks;
+    
+  } catch (error) {
+    console.error('Error al obtener tareas del backend:', error);
+    return [];
+  }
+};
+
+/**
+ * Mapear estados del backend al formato del frontend
+ */
+const mapBackendStatusToFrontend = (backendStatus: string): TaskStatus => {
+  const statusMap: Record<string, TaskStatus> = {
+    'Backlog': TaskStatus.BACKLOG,
+    'To Do': TaskStatus.TODO,
+    'Doing': TaskStatus.DOING,
+    'Demo': TaskStatus.DEMO,
+    'Done': TaskStatus.DONE,
+    'sin_planificar': TaskStatus.BACKLOG,
+    'planificada': TaskStatus.TODO,
+    'en_curso': TaskStatus.DOING,
+    'finalizada': TaskStatus.DONE
+  };
+  
+  return statusMap[backendStatus] || TaskStatus.BACKLOG;
+};
+
+/**
  * Calcular métricas del dashboard basándose en los datos reales del backend
  */
 export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => {
@@ -45,9 +109,9 @@ export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => 
     const teams = adaptBackendTeamsResponse(teamsResponse);
     const departments = adaptBackendDepartmentsResponse(departmentsResponse);
     
-    // Obtener tareas para calcular carga de equipos
-    const tasksWithStage = getTasksWithStage();
-    const teamsWithLoad = updateTeamsWithCurrentLoad(teams, tasksWithStage);
+    // Obtener tareas REALES del backend para calcular carga de equipos
+    const realTasks = await getRealTasksForTeamLoad();
+    const teamsWithLoad = updateTeamsWithCurrentLoad(teams, realTasks);
 
     // Métricas básicas de tareas del backend
     const totalTasks = stats.total;
@@ -59,10 +123,10 @@ export const calculateDashboardMetrics = async (): Promise<DashboardMetrics> => 
     const teamUtilization = calculateAverageTeamUtilization(teamsWithLoad);
 
     // Distribución por departamento basada en tareas reales
-    const departmentDistribution = calculateDepartmentDistribution(tasksWithStage, departments);
+    const departmentDistribution = calculateDepartmentDistribution(realTasks, departments);
 
     // Generar alertas críticas
-    const alerts = await generateCriticalAlerts(teamsWithLoad, tasksWithStage);
+    const alerts = await generateCriticalAlerts(teamsWithLoad, realTasks);
 
     return {
       totalTasks,
@@ -107,29 +171,31 @@ const calculateAverageTeamUtilization = (teams: any[]): number => {
 };
 
 /**
- * Calcular distribución por departamento
+ * Calcular distribución de tareas por departamento
  */
 const calculateDepartmentDistribution = (tasks: any[], departments: any[]) => {
-  const departmentCounts: Record<number, number> = {};
+  if (!tasks || tasks.length === 0) return [];
   
   // Contar tareas por departamento
+  const departmentCounts: Record<number, number> = {};
+  
   tasks.forEach(task => {
     if (task.department) {
       departmentCounts[task.department] = (departmentCounts[task.department] || 0) + 1;
     }
   });
-
+  
+  // Crear distribución con porcentajes
   const totalTasks = tasks.length;
   
-  // Crear distribución con nombres de departamentos
   return departments
     .map(dept => ({
       department: dept.name,
       count: departmentCounts[dept.id] || 0,
       percentage: totalTasks > 0 ? Math.round(((departmentCounts[dept.id] || 0) / totalTasks) * 100) : 0
     }))
-    .filter(dept => dept.count > 0)
-    .sort((a, b) => b.count - a.count);
+    .filter(dept => dept.count > 0) // Solo mostrar departamentos con tareas
+    .sort((a, b) => b.count - a.count); // Ordenar por cantidad descendente
 };
 
 /**
@@ -182,13 +248,13 @@ const generateCriticalAlerts = async (teams: any[], tasks: any[]): Promise<Alert
       }
     }
 
-    // Alertas de tareas sin asignar
-    if (!task.assignedTo) {
+    // Alertas de tareas sin asignar a equipo
+    if (!task.team) {
       alerts.push({
         id: Date.now() + task.id + 3000,
         type: AlertType.UNASSIGNED_TASK,
         taskId: task.id,
-        message: `La tarea "${task.subject}" no tiene responsable asignado`,
+        message: `La tarea "${task.subject}" no tiene equipo asignado`,
         createdAt: now,
         isRead: false
       });
@@ -212,13 +278,13 @@ export const getUpcomingDeadlines = () => {
  */
 export const getAllTeamsWithCurrentLoad = async () => {
   try {
-    const [teamsResponse, tasks] = await Promise.all([
+    const [teamsResponse, realTasks] = await Promise.all([
       teamService.getTeams(),
-      getTasksWithStage() // Usar función existente para obtener tareas
+      getRealTasksForTeamLoad() // Usar tareas reales en lugar de mock
     ]);
 
     const teams = adaptBackendTeamsResponse(teamsResponse);
-    return updateTeamsWithCurrentLoad(teams, tasks);
+    return updateTeamsWithCurrentLoad(teams, realTasks);
   } catch (error) {
     console.error('Error getting teams with current load:', error);
     return [];
@@ -232,19 +298,40 @@ export const getHighLoadTeams = async () => {
   try {
     const teams = await getAllTeamsWithCurrentLoad();
     
-    return teams
+    // Calcular utilización y agregar el campo utilization
+    const teamsWithUtilization = teams.map(team => ({
+      ...team,
+      utilization: team.capacity > 0 ? Math.round((team.currentLoad / team.capacity) * 100) : 0
+    }));
+    
+    return teamsWithUtilization
       .filter(team => {
         if (team.capacity <= 0) return false;
-        const utilizationPercent = (team.currentLoad / team.capacity) * 100;
-        return utilizationPercent > 80; // Equipos con más del 80% de utilización
+        return team.utilization > 50; // Mostrar equipos con más del 50% de utilización para el dashboard
       })
       .sort((a, b) => {
-        const utilizationA = (a.currentLoad / a.capacity) * 100;
-        const utilizationB = (b.currentLoad / b.capacity) * 100;
-        return utilizationB - utilizationA;
+        return b.utilization - a.utilization; // Ordenar por utilización descendente
       });
   } catch (error) {
     console.error('Error getting high load teams:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtener todos los equipos con utilización calculada para el dashboard
+ */
+export const getAllTeamsWithUtilization = async () => {
+  try {
+    const teams = await getAllTeamsWithCurrentLoad();
+    
+    // Calcular utilización y agregar el campo utilization para cada equipo
+    return teams.map(team => ({
+      ...team,
+      utilization: team.capacity > 0 ? Math.round((team.currentLoad / team.capacity) * 100) : 0
+    }));
+  } catch (error) {
+    console.error('Error getting teams with utilization:', error);
     return [];
   }
 }; 

@@ -302,21 +302,39 @@ export const adaptBackendDepartmentsResponse = (backendResponse: any): Departmen
 /**
  * Calcula la carga actual de un equipo basándose en las tareas asignadas
  */
-export const calculateTeamCurrentLoad = (tasks: Task[], teamId: number): number => {
-  const teamTasks = tasks.filter(task => 
-    task.team === teamId && 
-    (task.status === TaskStatus.TODO || task.status === TaskStatus.DOING)
-  );
+export const calculateTeamCurrentLoad = (tasks: any[], teamId: number): number => {
+  const teamTasks = tasks.filter((task: any) => {
+    // Verificar si es una tarea del formato mock o del formato backend
+    const taskTeamId = task.team || task.equipo_id;
+    const taskStatus = task.status || task.etapa;
+    
+    // Solo contar tareas que están asignadas al equipo y están activas
+    const isTeamMatch = taskTeamId === teamId;
+    const isActiveStatus = (
+      taskStatus === TaskStatus.TODO || 
+      taskStatus === TaskStatus.DOING ||
+      taskStatus === 'planificada' ||
+      taskStatus === 'en_curso' ||
+      taskStatus === 'Doing' ||
+      taskStatus === 'To Do'
+    );
+    
+    return isTeamMatch && isActiveStatus;
+  });
   
-  return teamTasks.reduce((totalLoad, task) => {
-    return totalLoad + (task.loadFactor || 1);
+  const totalLoad = teamTasks.reduce((sum: number, task: any) => {
+    // Verificar si es formato mock o backend
+    const loadFactor = task.factor_carga || task.loadFactor || 1;
+    return sum + loadFactor;
   }, 0);
+  
+  return totalLoad;
 };
 
 /**
  * Actualiza la carga actual de los equipos basándose en las tareas
  */
-export const updateTeamsWithCurrentLoad = (teams: Team[], tasks: Task[]): Team[] => {
+export const updateTeamsWithCurrentLoad = (teams: Team[], tasks: any[]): Team[] => {
   return teams.map(team => ({
     ...team,
     currentLoad: calculateTeamCurrentLoad(tasks, team.id)
@@ -431,19 +449,48 @@ export const clearTeamsAndDepartmentsCache = () => {
  */
 export const getAllTeamsWithCurrentLoad = async (): Promise<Team[]> => {
   try {
-    const { teamService } = await import('./api');
-    const { getTasksWithStage } = await import('./mockData/tasks');
+    const { teamService, taskService } = await import('./api');
     
-    const [teamsResponse, tasks] = await Promise.all([
+    // Obtener equipos del backend
+    const [teamsResponse, tasksResponse] = await Promise.all([
       teamService.getTeams(),
-      Promise.resolve(getTasksWithStage())
+      taskService.getTasks({
+        etapa: 'en_curso,planificada', // Solo tareas activas
+        limit: 1000 // Obtener todas las tareas activas
+      })
     ]);
 
     const teams = adaptBackendTeamsResponse(teamsResponse);
+    
+    // Procesar tareas del backend
+    let tasks: any[] = [];
+    if (tasksResponse.success && tasksResponse.data) {
+      const backendTasks = tasksResponse.data.tasks || tasksResponse.data;
+      tasks = backendTasks
+        .filter((task: any) => task.equipo_id && task.factor_carga) // Solo tareas con equipo y factor de carga
+        .map((task: any) => ({
+          id: task.id,
+          team: task.equipo_id,
+          loadFactor: task.factor_carga || 1,
+          status: task.etapa || task.status,
+          subject: task.subject
+        }));
+    }
+    
     return updateTeamsWithCurrentLoad(teams, tasks);
   } catch (error) {
     console.error('Error getting teams with current load:', error);
-    return [];
+    
+    // Fallback: usar solo datos de equipos sin carga calculada
+    try {
+      const { teamService } = await import('./api');
+      const teamsResponse = await teamService.getTeams();
+      const teams = adaptBackendTeamsResponse(teamsResponse);
+      return teams.map(team => ({ ...team, currentLoad: 0 }));
+    } catch (fallbackError) {
+      console.error('Error in fallback:', fallbackError);
+      return [];
+    }
   }
 };
 

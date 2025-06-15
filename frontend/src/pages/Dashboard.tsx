@@ -15,6 +15,7 @@ import {
   calculateDashboardMetrics, 
   getUpcomingDeadlines, 
   getHighLoadTeams,
+  getAllTeamsWithUtilization,
   DashboardMetrics 
 } from '../services/dashboardService';
 import './Dashboard.css';
@@ -24,6 +25,7 @@ const Dashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<any[]>([]);
   const [highLoadTeams, setHighLoadTeams] = useState<any[]>([]);
+  const [allTeams, setAllTeams] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +41,11 @@ const Dashboard: React.FC = () => {
         // Cargar fechas límite próximas (aún desde mock)
         setUpcomingDeadlines(getUpcomingDeadlines());
         
-        // Cargar equipos con alta carga
+        // Cargar todos los equipos con su utilización
+        const allTeamsData = await getAllTeamsWithUtilization();
+        setAllTeams(allTeamsData);
+        
+        // Cargar equipos con alta carga (filtrado de todos los equipos)
         const highLoadTeamsData = await getHighLoadTeams();
         setHighLoadTeams(highLoadTeamsData);
         
@@ -192,10 +198,13 @@ const Dashboard: React.FC = () => {
                 Utilización de Equipos ({metrics.teamUtilization}% promedio)
               </Card.Header>
               <Card.Body className="p-0">
-                {highLoadTeams.length > 0 ? (
+                {allTeams.length > 0 ? (
                   <div className="team-utilization-scroll">
                     <div className="p-3">
-                      {highLoadTeams.map((team, index) => (
+                      {allTeams
+                        .sort((a, b) => b.utilization - a.utilization) // Ordenar por utilización descendente
+                        .slice(0, 10) // Mostrar solo los primeros 10 equipos
+                        .map((team, index) => (
                         <div key={team.id} className="mb-3">
                           <div className="d-flex justify-content-between align-items-center mb-1">
                             <span className="team-name">{team.name}</span>
@@ -203,9 +212,18 @@ const Dashboard: React.FC = () => {
                               {team.utilization}%
                             </span>
                           </div>
+                          <div className="d-flex justify-content-between align-items-center mb-1">
+                            <small className="text-muted">
+                              {team.currentLoad.toFixed(1)}/{team.capacity.toFixed(1)} capacidad
+                            </small>
+                            <small className="text-muted">
+                              {team.isExternal ? 'Externo' : 'Interno'}
+                            </small>
+                          </div>
                           <ProgressBar 
                             now={Math.min(team.utilization, 100)} 
                             variant={team.utilization > 100 ? 'danger' : team.utilization > 80 ? 'warning' : 'success'}
+                            style={{ height: '8px' }}
                           />
                         </div>
                       ))}
@@ -307,13 +325,13 @@ const Dashboard: React.FC = () => {
               Estado de Equipos
             </Card.Header>
             <Card.Body>
-              {highLoadTeams.length > 0 ? (
+              {allTeams.length > 0 ? (
                 <div className="team-status">
                   <div className="row text-center mb-3">
                     <div className="col-4">
                       <div className="status-metric">
                         <h4 className="text-success">
-                          {highLoadTeams.filter(t => t.utilization < 80).length}
+                          {allTeams.filter(t => t.utilization < 80).length}
                         </h4>
                         <small className="text-muted">Disponibles</small>
                       </div>
@@ -321,7 +339,7 @@ const Dashboard: React.FC = () => {
                     <div className="col-4">
                       <div className="status-metric">
                         <h4 className="text-warning">
-                          {highLoadTeams.filter(t => t.utilization >= 80 && t.utilization <= 100).length}
+                          {allTeams.filter(t => t.utilization >= 80 && t.utilization <= 100).length}
                         </h4>
                         <small className="text-muted">Alta Carga</small>
                       </div>
@@ -329,13 +347,17 @@ const Dashboard: React.FC = () => {
                     <div className="col-4">
                       <div className="status-metric">
                         <h4 className="text-danger">
-                          {highLoadTeams.filter(t => t.utilization > 100).length}
+                          {allTeams.filter(t => t.utilization > 100).length}
                         </h4>
                         <small className="text-muted">Sobrecargados</small>
                       </div>
                     </div>
                   </div>
                   <div className="text-center">
+                    <small className="text-muted">
+                      Total de equipos activos: <strong>{allTeams.length}</strong>
+                    </small>
+                    <br />
                     <small className="text-muted">
                       Utilización promedio global: <strong>{metrics.teamUtilization}%</strong>
                     </small>
